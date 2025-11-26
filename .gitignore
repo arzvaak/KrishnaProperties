@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Environment variables
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Backend specific
+backend/serviceAccountKey.json
+backend/__pycache__/
