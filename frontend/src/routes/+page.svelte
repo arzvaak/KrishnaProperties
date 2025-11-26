@@ -36,6 +36,13 @@
 
   onMount(async () => {
     try {
+      // Track site view
+      fetch("http://127.0.0.1:5000/api/analytics/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "site_view" }),
+      }).catch(console.error);
+
       const response = await fetch("http://127.0.0.1:5000/api/properties");
       if (response.ok) {
         properties = await response.json();

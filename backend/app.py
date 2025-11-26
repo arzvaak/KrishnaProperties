@@ -4,12 +4,14 @@ from firebase_config import initialize_firebase
 
 from routes.properties import properties_bp
 from routes.users import users_bp
+from routes.analytics import analytics_bp
 
 app = Flask(__name__)
 CORS(app)
 
 app.register_blueprint(properties_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(analytics_bp)
 
 # Initialize Firebase
 try:

@@ -22,6 +22,7 @@
   import Map from "$lib/components/Map.svelte";
 
   let property: any = null;
+  let similarProperties: any[] = [];
   let loading = true;
   let error = null;
   const id = $page.params.id;
@@ -30,22 +31,49 @@
   let message = "";
   let contactSent = false;
 
-  function handleContact() {
-    // Simulate API call
-    setTimeout(() => {
+  async function handleContact() {
+    try {
+      await fetch("http://127.0.0.1:5000/api/analytics/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "contact",
+          property_id: id,
+          metadata: { message },
+        }),
+      });
       contactSent = true;
       toast.success("Message sent to agent!");
       message = "";
-    }, 1000);
+    } catch (e) {
+      toast.error("Failed to send message");
+    }
   }
 
   onMount(async () => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/properties/${id}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch property details");
-      property = await response.json();
+      // Track property view
+      fetch("http://127.0.0.1:5000/api/analytics/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "property_view", property_id: id }),
+      }).catch(console.error);
+
+      const [propResponse, allPropsResponse] = await Promise.all([
+        fetch(`http://127.0.0.1:5000/api/properties/${id}`),
+        fetch(`http://127.0.0.1:5000/api/properties`),
+      ]);
+
+      if (!propResponse.ok) throw new Error("Failed to fetch property details");
+      property = await propResponse.json();
+
+      if (allPropsResponse.ok) {
+        const allProps = await allPropsResponse.json();
+        // Filter out current property and take 3 random ones (or just next 3)
+        similarProperties = allProps
+          .filter((p: any) => p.id !== id)
+          .slice(0, 3);
+      }
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -177,19 +205,11 @@
       <div class="space-y-6">
         <Card>
           <CardContent class="p-6 space-y-4">
-            <h3 class="font-bold text-lg">Contact Agent</h3>
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
-                <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                  alt="Agent"
-                />
-              </div>
-              <div>
-                <p class="font-medium">Rahul Sharma</p>
-                <p class="text-xs text-muted-foreground">Senior Agent</p>
-              </div>
-            </div>
+            <h3 class="font-bold text-lg">Contact Us</h3>
+            <p class="text-sm text-muted-foreground">
+              Interested in this property? Send us a message and we'll get back
+              to you shortly.
+            </p>
             <div class="space-y-3">
               {#if contactSent}
                 <div
@@ -216,7 +236,7 @@
                 class="w-full gap-2"
                 href="tel:+919876543210"
               >
-                <Phone class="w-4 h-4" /> Call Agent
+                <Phone class="w-4 h-4" /> Call Us
               </Button>
             </div>
           </CardContent>
@@ -236,6 +256,46 @@
             </div>
           </CardContent>
         </Card>
+
+        {#if similarProperties.length > 0}
+          <div class="space-y-4">
+            <h3 class="font-bold text-lg">You Might Also Like</h3>
+            {#each similarProperties as prop}
+              <a href="/properties/{prop.id}" class="block group">
+                <Card class="overflow-hidden hover:shadow-md transition-shadow">
+                  <div class="flex gap-3 p-3">
+                    <div
+                      class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0"
+                    >
+                      <img
+                        src={prop.imageUrl ||
+                          prop.images?.[0] ||
+                          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
+                        alt={prop.title}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div class="flex flex-col justify-between py-1">
+                      <div>
+                        <h4
+                          class="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors"
+                        >
+                          {prop.title}
+                        </h4>
+                        <p class="text-xs text-muted-foreground mt-1">
+                          {prop.location}
+                        </p>
+                      </div>
+                      <p class="font-bold text-primary text-sm">
+                        ₹ {prop.price}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </a>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
