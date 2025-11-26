@@ -18,6 +18,7 @@
     let loading = false;
     let uploading = false;
     let files: File[] = [];
+    let videoFile: File | null = null;
     let previewUrls: string[] = [];
 
     let formData = {
@@ -31,6 +32,8 @@
         description: "",
         imageUrl: "",
         images: [] as string[],
+        videoUrl: "",
+        videoType: "url" as "url" | "file",
         coordinates: { lat: 19.076, lng: 72.8777 },
     };
 
@@ -43,6 +46,13 @@
         if (target.files) {
             files = Array.from(target.files);
             previewUrls = files.map((file) => URL.createObjectURL(file));
+        }
+    }
+
+    function handleVideoChange(e: Event) {
+        const target = e.target as HTMLInputElement;
+        if (target.files && target.files[0]) {
+            videoFile = target.files[0];
         }
     }
 
@@ -61,6 +71,16 @@
         return await Promise.all(uploadPromises);
     }
 
+    async function uploadVideo(): Promise<string> {
+        if (!videoFile) return "";
+        const storageRef = ref(
+            storage,
+            `properties/videos/${Date.now()}_${videoFile.name}`,
+        );
+        await uploadBytes(storageRef, videoFile);
+        return await getDownloadURL(storageRef);
+    }
+
     async function handleSubmit() {
         loading = true;
         try {
@@ -69,6 +89,15 @@
                 const uploadedUrls = await uploadImages();
                 formData.images = uploadedUrls;
                 formData.imageUrl = uploadedUrls[0]; // Set first image as main image for backward compatibility
+
+                if (formData.videoType === "file" && videoFile) {
+                    formData.videoUrl = await uploadVideo();
+                }
+
+                uploading = false;
+            } else if (formData.videoType === "file" && videoFile) {
+                uploading = true;
+                formData.videoUrl = await uploadVideo();
                 uploading = false;
             }
 
@@ -204,6 +233,54 @@
                                 />
                             </div>
                         {/each}
+                    </div>
+                {/if}
+            </div>
+
+            <div class="space-y-4 border-t pt-4">
+                <Label>Property Video</Label>
+                <div class="flex gap-4 mb-4">
+                    <Button
+                        type="button"
+                        variant={formData.videoType === "url"
+                            ? "default"
+                            : "outline"}
+                        onclick={() => (formData.videoType = "url")}
+                    >
+                        YouTube/Vimeo URL
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={formData.videoType === "file"
+                            ? "default"
+                            : "outline"}
+                        onclick={() => (formData.videoType = "file")}
+                    >
+                        Upload Video
+                    </Button>
+                </div>
+
+                {#if formData.videoType === "url"}
+                    <div class="space-y-2">
+                        <Label for="videoUrl">Video URL</Label>
+                        <Input
+                            id="videoUrl"
+                            bind:value={formData.videoUrl}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                    </div>
+                {:else}
+                    <div class="space-y-2">
+                        <Label for="videoFile">Upload Video File</Label>
+                        <Input
+                            id="videoFile"
+                            type="file"
+                            accept="video/*"
+                            onchange={handleVideoChange}
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            Max size: 50MB. Supported formats: MP4, WebM.
+                        </p>
                     </div>
                 {/if}
             </div>
