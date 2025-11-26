@@ -18,6 +18,7 @@ def track_event():
             'type': event_type,
             'timestamp': firestore.SERVER_TIMESTAMP,
             'property_id': property_id,
+            'user_id': data.get('user_id'), # Track who triggered the event
             'metadata': metadata
         }
         

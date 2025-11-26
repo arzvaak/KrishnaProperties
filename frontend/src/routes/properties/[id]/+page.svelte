@@ -10,14 +10,19 @@
     Bed,
     Bath,
     Square,
-    Calendar,
     Phone,
     Mail,
     ChevronLeft,
     ChevronRight,
     Heart,
     Share2,
+    Printer,
+    Copy,
+    Facebook,
+    Twitter,
+    Calendar as CalendarIcon,
   } from "lucide-svelte";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { toast } from "svelte-sonner";
   import emblaCarouselSvelte from "embla-carousel-svelte";
@@ -34,6 +39,7 @@
   let message = "";
   let contactSent = false;
   let isFavorite = false;
+  let isShareOpen = false;
 
   async function toggleFavorite() {
     if (!$user) {
@@ -66,6 +72,48 @@
     }
   }
 
+  function handleShare() {
+    isShareOpen = true;
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard!");
+    isShareOpen = false;
+  }
+
+  function shareSocial(platform: string) {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(
+      `Check out this property: ${property.title}`,
+    );
+    let shareUrl = "";
+
+    switch (platform) {
+      case "whatsapp":
+        shareUrl = `https://wa.me/?text=${text}%20${url}`;
+        break;
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+        break;
+      case "twitter":
+        shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+        break;
+      case "email":
+        shareUrl = `mailto:?subject=${text}&body=${url}`;
+        break;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, "_blank");
+      isShareOpen = false;
+    }
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
   function getEmbedUrl(url: string) {
     if (!url) return null;
 
@@ -84,6 +132,25 @@
     return null;
   }
 
+  import { Calendar } from "$lib/components/ui/calendar";
+  import * as Popover from "$lib/components/ui/popover";
+  import { cn } from "$lib/utils";
+  import {
+    DateFormatter,
+    type DateValue,
+    getLocalTimeZone,
+  } from "@internationalized/date";
+
+  let date: DateValue | undefined = undefined;
+  let time = "10:00";
+  let isScheduleOpen = false;
+  let scheduling = false;
+  let selectedIndex = 0;
+
+  const df = new DateFormatter("en-US", {
+    dateStyle: "long",
+  });
+
   async function handleContact() {
     try {
       await fetch("http://127.0.0.1:5000/api/analytics/track", {
@@ -92,14 +159,50 @@
         body: JSON.stringify({
           type: "contact",
           property_id: id,
+          user_id: $user?.uid,
           metadata: { message },
         }),
       });
       contactSent = true;
-      toast.success("Message sent to agent!");
+      toast.success("Message sent to team!");
       message = "";
     } catch (e) {
       toast.error("Failed to send message");
+    }
+  }
+
+  async function handleSchedule() {
+    if (!$user) {
+      toast.error("Please login to schedule a viewing");
+      return;
+    }
+    if (!date) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    scheduling = true;
+    try {
+      const res = await fetch("http://127.0.0.1:5000/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: $user.uid,
+          property_id: id,
+          date: date.toString(),
+          time: time,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to schedule");
+
+      toast.success(data.message);
+      isScheduleOpen = false;
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      scheduling = false;
     }
   }
 
@@ -113,7 +216,6 @@
       }).catch(console.error);
 
       const [propResponse, allPropsResponse] = await Promise.all([
-        fetch(`http://127.0.0.1:5000/api/properties/${id}`),
         fetch(`http://127.0.0.1:5000/api/properties/${id}`),
         fetch(`http://127.0.0.1:5000/api/properties`),
       ]);
@@ -138,8 +240,49 @@
       if (!propResponse.ok) throw new Error("Failed to fetch property details");
       property = await propResponse.json();
 
+      // Save to recently viewed
+      user.subscribe(async (u) => {
+        if (u) {
+          // Logged in: Save to API
+          try {
+            await fetch(
+              `http://127.0.0.1:5000/api/users/${u.uid}/recently-viewed`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ propertyId: property.id }),
+              },
+            );
+          } catch (e) {
+            console.error("Failed to save recently viewed to API", e);
+          }
+        } else {
+          // Guest: Save to localStorage
+          const viewed = localStorage.getItem("recentlyViewed");
+          let recentlyViewed = viewed ? JSON.parse(viewed) : [];
+          recentlyViewed = recentlyViewed.filter(
+            (p: any) => p.id !== property.id,
+          );
+          recentlyViewed.unshift({
+            id: property.id,
+            title: property.title,
+            price: property.price,
+            image:
+              property.images?.[0] ||
+              property.imageUrl ||
+              "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          });
+          if (recentlyViewed.length > 4) recentlyViewed.pop();
+          localStorage.setItem(
+            "recentlyViewed",
+            JSON.stringify(recentlyViewed),
+          );
+        }
+      });
+
       if (allPropsResponse.ok) {
-        const allProps = await allPropsResponse.json();
+        const data = await allPropsResponse.json();
+        const allProps = data.properties || [];
         // Filter out current property and take 3 random ones (or just next 3)
         similarProperties = allProps
           .filter((p: any) => p.id !== id)
@@ -182,7 +325,12 @@
               options: { loop: true },
               plugins: [Autoplay({ delay: 5000 })],
             }}
-            onemblaInit={(event) => (emblaApi = event.detail)}
+            onemblaInit={(event) => {
+              emblaApi = event.detail;
+              emblaApi.on("select", () => {
+                selectedIndex = emblaApi.selectedScrollSnap();
+              });
+            }}
           >
             <div class="flex">
               {#if property.images && property.images.length > 0}
@@ -192,6 +340,12 @@
                       src={image}
                       alt={property.title}
                       class="object-cover w-full h-full"
+                      onerror={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        img.onerror = null;
+                        img.src =
+                          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+                      }}
                     />
                   </div>
                 {/each}
@@ -202,6 +356,12 @@
                       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
                     alt={property.title}
                     class="object-cover w-full h-full"
+                    onerror={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.onerror = null;
+                      img.src =
+                        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+                    }}
                   />
                 </div>
               {/if}
@@ -249,6 +409,43 @@
           </button>
         </div>
 
+        <!-- Thumbnails -->
+        {#if property.images && property.images.length > 0}
+          <div class="flex gap-2 overflow-x-auto pb-2">
+            {#each property.images as image, i}
+              <button
+                class="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all {i ===
+                selectedIndex
+                  ? 'border-primary ring-2 ring-primary/50'
+                  : 'border-transparent opacity-70 hover:opacity-100'}"
+                onclick={() => emblaApi && emblaApi.scrollTo(i)}
+              >
+                <img
+                  src={image}
+                  alt={`Thumbnail ${i + 1}`}
+                  class="object-cover w-full h-full"
+                />
+              </button>
+            {/each}
+            {#if property.videoUrl}
+              <button
+                class="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all {property
+                  .images.length === selectedIndex
+                  ? 'border-primary ring-2 ring-primary/50'
+                  : 'border-transparent opacity-70 hover:opacity-100'}"
+                onclick={() =>
+                  emblaApi && emblaApi.scrollTo(property.images.length)}
+              >
+                <div
+                  class="w-full h-full bg-black flex items-center justify-center text-white"
+                >
+                  <span class="text-xs">Video</span>
+                </div>
+              </button>
+            {/if}
+          </div>
+        {/if}
+
         <div>
           <div class="flex justify-between items-start mb-2">
             <h1 class="text-3xl font-bold">{property.title}</h1>
@@ -260,8 +457,21 @@
                     : ''}"
                 />
               </Button>
-              <Button variant="outline" size="icon">
+              <Button
+                variant="outline"
+                size="icon"
+                onclick={handleShare}
+                class="no-print"
+              >
                 <Share2 class="w-5 h-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onclick={handlePrint}
+                class="no-print"
+              >
+                <Printer class="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -342,6 +552,48 @@
                   <Mail class="w-4 h-4" /> Send Message
                 </Button>
               {/if}
+              <Popover.Root bind:open={isScheduleOpen}>
+                <Popover.Trigger class="w-full">
+                  <Button variant="outline" class="w-full gap-2">
+                    <CalendarIcon class="w-4 h-4" /> Schedule Viewing
+                  </Button>
+                </Popover.Trigger>
+                <Popover.Content class="w-auto p-0" align="start">
+                  <div class="p-4 space-y-4">
+                    <div class="space-y-2">
+                      <h4 class="font-medium leading-none">Pick a date</h4>
+                      <Calendar
+                        bind:value={date}
+                        type="single"
+                        class="rounded-md border"
+                      />
+                    </div>
+                    <div class="space-y-2">
+                      <h4 class="font-medium leading-none">Pick a time</h4>
+                      <select
+                        bind:value={time}
+                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">01:00 PM</option>
+                        <option value="14:00">02:00 PM</option>
+                        <option value="15:00">03:00 PM</option>
+                        <option value="16:00">04:00 PM</option>
+                        <option value="17:00">05:00 PM</option>
+                      </select>
+                    </div>
+                    <Button
+                      class="w-full"
+                      onclick={handleSchedule}
+                      disabled={scheduling}
+                    >
+                      {scheduling ? "Scheduling..." : "Confirm Booking"}
+                    </Button>
+                  </div>
+                </Popover.Content>
+              </Popover.Root>
               <Button
                 variant="outline"
                 class="w-full gap-2"
@@ -411,3 +663,85 @@
     </div>
   {/if}
 </div>
+
+<Dialog.Root bind:open={isShareOpen}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Share Property</Dialog.Title>
+      <Dialog.Description>
+        Share this property with your friends and family.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="grid grid-cols-2 gap-4 py-4">
+      <Button
+        variant="outline"
+        class="flex flex-col h-24 gap-2"
+        onclick={() => shareSocial("whatsapp")}
+      >
+        <span class="text-2xl">📱</span>
+        WhatsApp
+      </Button>
+      <Button
+        variant="outline"
+        class="flex flex-col h-24 gap-2"
+        onclick={() => shareSocial("facebook")}
+      >
+        <Facebook class="w-6 h-6 text-blue-600" />
+        Facebook
+      </Button>
+      <Button
+        variant="outline"
+        class="flex flex-col h-24 gap-2"
+        onclick={() => shareSocial("twitter")}
+      >
+        <Twitter class="w-6 h-6 text-sky-500" />
+        Twitter
+      </Button>
+      <Button
+        variant="outline"
+        class="flex flex-col h-24 gap-2"
+        onclick={() => shareSocial("email")}
+      >
+        <Mail class="w-6 h-6" />
+        Email
+      </Button>
+    </div>
+    <div class="flex items-center space-x-2">
+      <div class="grid flex-1 gap-2">
+        <Button
+          variant="secondary"
+          class="w-full justify-start text-muted-foreground"
+          onclick={copyLink}
+        >
+          <Copy class="mr-2 h-4 w-4" />
+          Copy Link
+        </Button>
+      </div>
+    </div>
+  </Dialog.Content>
+</Dialog.Root>
+
+<style>
+  @media print {
+    :global(body > *:not(.container)),
+    :global(nav),
+    :global(footer) {
+      display: none !important;
+    }
+
+    :global(body) {
+      background: white;
+    }
+
+    .container {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* Hide carousel navigation */
+    :global(.embla__button) {
+      display: none !important;
+    }
+  }
+</style>

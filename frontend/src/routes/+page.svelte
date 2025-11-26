@@ -45,7 +45,8 @@
 
       const response = await fetch("http://127.0.0.1:5000/api/properties");
       if (response.ok) {
-        properties = await response.json();
+        const data = await response.json();
+        properties = data.properties || [];
         // Take first 5 as featured for the carousel
         featuredProperties = properties.slice(0, 5);
       }
@@ -83,6 +84,12 @@
                   "https://images.unsplash.com/photo-1600596542815-27b88e35eabd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80"}
                 alt={property.title}
                 class="object-cover w-full h-full transform transition-transform duration-[10s] hover:scale-105"
+                onerror={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  img.onerror = null; // Prevent infinite loop
+                  img.src =
+                    "https://images.unsplash.com/photo-1600596542815-27b88e35eabd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80";
+                }}
               />
               <div
                 class="absolute inset-0 z-20 flex items-center justify-center text-center text-white p-4"
@@ -248,7 +255,7 @@
     <div class="container px-4">
       <div class="text-center max-w-3xl mx-auto mb-20" use:reveal>
         <h2 class="text-4xl font-bold mb-6 tracking-tight">
-          Why Choose Krishna Real Estate?
+          Why Choose Krishna Properties?
         </h2>
         <p class="text-xl text-muted-foreground">
           We provide a seamless property buying experience with transparency,

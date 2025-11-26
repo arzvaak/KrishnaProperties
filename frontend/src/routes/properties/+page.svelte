@@ -8,12 +8,15 @@
   import * as Select from "$lib/components/ui/select";
   import { Slider } from "$lib/components/ui/slider";
   import { Badge } from "$lib/components/ui/badge";
-  import { Filter, X } from "lucide-svelte";
+  import { Filter, X, Save, History, Trash2 } from "lucide-svelte";
   import { fade, slide } from "svelte/transition";
+  import { user } from "$lib/stores/auth";
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { toast } from "svelte-sonner";
 
   let properties: any[] = [];
   let loading = true;
-  let error = null;
+  let error: string | null = null;
 
   // Filters
   let searchQuery = "";
@@ -22,6 +25,17 @@
   let bedrooms = 0;
   let propertyType = "all";
   let showFilters = false;
+  let sortBy = "newest";
+  let currentPage = 1;
+  let totalPages = 1;
+  let totalProperties = 0;
+
+  // Saved Searches & Recently Viewed
+  let isSaveSearchOpen = false;
+  let isSavedSearchesListOpen = false;
+  let searchName = "";
+  let savedSearches: any[] = [];
+  let recentlyViewed: any[] = [];
 
   async function fetchProperties() {
     loading = true;
@@ -35,11 +49,18 @@
       if (propertyType && propertyType !== "all")
         params.append("type", propertyType);
 
+      params.append("sort", sortBy);
+      params.append("page", currentPage.toString());
+
       const response = await fetch(
         `http://127.0.0.1:5000/api/properties?${params.toString()}`,
       );
       if (!response.ok) throw new Error("Failed to fetch properties");
-      properties = await response.json();
+      const data = await response.json();
+      properties = data.properties;
+      totalPages = data.total_pages;
+      currentPage = data.page;
+      totalProperties = data.total;
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -59,11 +80,128 @@
     maxPrice = 100000000;
     bedrooms = 0;
     propertyType = "all";
+    currentPage = 1;
     fetchProperties();
+  }
+
+  function handleSortChange(value: string) {
+    sortBy = value;
+    currentPage = 1; // Reset to first page on sort change
+    fetchProperties();
+  }
+
+  function handlePageChange(page: number) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    fetchProperties();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveSearch() {
+    if (!$user) {
+      toast.error("Please login to save searches");
+      return;
+    }
+    if (!searchName) return;
+
+    try {
+      const filters = {
+        searchQuery,
+        minPrice,
+        maxPrice,
+        bedrooms,
+        propertyType,
+        sortBy,
+      };
+
+      const res = await fetch(
+        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: searchName, filters }),
+        },
+      );
+
+      if (!res.ok) throw new Error("Failed to save search");
+
+      toast.success("Search saved successfully");
+      isSaveSearchOpen = false;
+      searchName = "";
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function loadSavedSearches() {
+    if (!$user) return;
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches`,
+      );
+      if (res.ok) {
+        savedSearches = await res.json();
+        isSavedSearchesListOpen = true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function applySearch(search: any) {
+    const f = search.filters;
+    searchQuery = f.searchQuery || "";
+    minPrice = f.minPrice || 0;
+    maxPrice = f.maxPrice || 100000000;
+    bedrooms = f.bedrooms || 0;
+    propertyType = f.propertyType || "all";
+    sortBy = f.sortBy || "newest";
+    isSavedSearchesListOpen = false;
+    fetchProperties();
+    toast.success("Filters applied");
+  }
+
+  async function deleteSearch(id: string) {
+    if (!$user) return;
+    try {
+      await fetch(
+        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
+      savedSearches = savedSearches.filter((s) => s.id !== id);
+      toast.success("Search deleted");
+    } catch (e) {
+      toast.error("Failed to delete search");
+    }
   }
 
   onMount(() => {
     fetchProperties();
+
+    // Load recently viewed
+    user.subscribe(async (u) => {
+      if (u) {
+        // Logged in: Fetch from API
+        try {
+          const res = await fetch(
+            `http://127.0.0.1:5000/api/users/${u.uid}/recently-viewed`,
+          );
+          if (res.ok) {
+            recentlyViewed = await res.json();
+          }
+        } catch (e) {
+          console.error("Failed to fetch recently viewed from API", e);
+        }
+      } else {
+        // Guest: Fetch from localStorage
+        const viewed = localStorage.getItem("recentlyViewed");
+        if (viewed) {
+          recentlyViewed = JSON.parse(viewed);
+        }
+      }
+    });
   });
 </script>
 
@@ -75,10 +213,10 @@
       <div>
         <h1 class="text-4xl font-bold mb-2 tracking-tight">Properties</h1>
         <p class="text-muted-foreground text-lg">
-          Explore our curated list of premium homes
+          Showing {totalProperties} premium homes
         </p>
       </div>
-      <div class="flex gap-2 w-full md:w-auto">
+      <div class="flex gap-2 w-full md:w-auto flex-wrap">
         <div class="relative w-full md:w-[300px]">
           <Input
             placeholder="Search location, title..."
@@ -93,9 +231,46 @@
           size="icon"
           onclick={() => (showFilters = !showFilters)}
           class={showFilters ? "bg-secondary" : ""}
+          title="Toggle Filters"
         >
           <Filter class="w-4 h-4" />
         </Button>
+        {#if $user}
+          <Button
+            variant="outline"
+            size="icon"
+            onclick={() => (isSaveSearchOpen = true)}
+            title="Save Search"
+          >
+            <Save class="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onclick={loadSavedSearches}
+            title="My Saved Searches"
+          >
+            <History class="w-4 h-4" />
+          </Button>
+        {/if}
+        <Select.Root
+          type="single"
+          bind:value={sortBy}
+          onValueChange={handleSortChange}
+        >
+          <Select.Trigger class="w-[180px]">
+            {sortBy === "newest"
+              ? "Newest First"
+              : sortBy === "price_asc"
+                ? "Price: Low to High"
+                : "Price: High to Low"}
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="newest">Newest First</Select.Item>
+            <Select.Item value="price_asc">Price: Low to High</Select.Item>
+            <Select.Item value="price_desc">Price: High to Low</Select.Item>
+          </Select.Content>
+        </Select.Root>
       </div>
     </div>
 
@@ -235,5 +410,126 @@
         </div>
       {/each}
     </div>
+
+    <!-- Pagination -->
+    {#if totalPages > 1}
+      <div class="flex justify-center items-center gap-2 mt-12">
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+
+        <div class="flex items-center gap-2 mx-4">
+          <span class="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    {/if}
+  {/if}
+
+  {#if recentlyViewed.length > 0}
+    <div class="mt-16">
+      <h2 class="text-2xl font-bold mb-6">Recently Viewed</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {#each recentlyViewed as prop}
+          <a href="/properties/{prop.id}" class="block group">
+            <div
+              class="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+            >
+              <div class="h-40 overflow-hidden">
+                <img
+                  src={prop.image}
+                  alt={prop.title}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <div class="p-4">
+                <h4 class="font-semibold truncate">{prop.title}</h4>
+                <p class="text-primary font-bold mt-1">₹ {prop.price}</p>
+              </div>
+            </div>
+          </a>
+        {/each}
+      </div>
+    </div>
   {/if}
 </div>
+
+<!-- Save Search Dialog -->
+<Dialog.Root bind:open={isSaveSearchOpen}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Save Search</Dialog.Title>
+      <Dialog.Description>
+        Give a name to your current search filters to access them easily later.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="py-4">
+      <Label>Search Name</Label>
+      <Input
+        bind:value={searchName}
+        placeholder="e.g. 3 BHK in Mumbai"
+        class="mt-2"
+      />
+    </div>
+    <Dialog.Footer>
+      <Button onclick={saveSearch}>Save</Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- Saved Searches List Dialog -->
+<Dialog.Root bind:open={isSavedSearchesListOpen}>
+  <Dialog.Content class="max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>My Saved Searches</Dialog.Title>
+    </Dialog.Header>
+    <div class="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+      {#if savedSearches.length === 0}
+        <p class="text-center text-muted-foreground">
+          No saved searches found.
+        </p>
+      {:else}
+        {#each savedSearches as search}
+          <div
+            class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+          >
+            <button
+              class="flex-1 text-left"
+              onclick={() => applySearch(search)}
+            >
+              <div class="font-medium">{search.name}</div>
+              <div class="text-xs text-muted-foreground mt-1">
+                {new Date(
+                  search.createdAt.replace(" ", "T"),
+                ).toLocaleDateString()}
+              </div>
+            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="text-red-500 hover:text-red-600 hover:bg-red-50"
+              onclick={() => deleteSearch(search.id)}
+            >
+              <Trash2 class="w-4 h-4" />
+            </Button>
+          </div>
+        {/each}
+      {/if}
+    </div>
+  </Dialog.Content>
+</Dialog.Root>

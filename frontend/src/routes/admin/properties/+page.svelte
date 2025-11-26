@@ -19,7 +19,8 @@
     try {
       const response = await fetch("http://127.0.0.1:5000/api/properties");
       if (!response.ok) throw new Error("Failed to fetch properties");
-      properties = await response.json();
+      const data = await response.json();
+      properties = data.properties || [];
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -66,11 +67,11 @@
     <TableBody>
       {#if loading}
         <TableRow>
-          <TableCell colspan="5" class="text-center py-8">Loading...</TableCell>
+          <TableCell colspan={5} class="text-center py-8">Loading...</TableCell>
         </TableRow>
       {:else if properties.length === 0}
         <TableRow>
-          <TableCell colspan="5" class="text-center py-8"
+          <TableCell colspan={5} class="text-center py-8"
             >No properties found.</TableCell
           >
         </TableRow>
@@ -82,7 +83,12 @@
             <TableCell>₹ {property.price}</TableCell>
             <TableCell>{property.type}</TableCell>
             <TableCell class="text-right">
-              <Button variant="ghost" size="icon" class="mr-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                class="mr-2"
+                href={`/admin/properties/${property.id}/edit`}
+              >
                 <Pencil class="h-4 w-4" />
               </Button>
               <Button

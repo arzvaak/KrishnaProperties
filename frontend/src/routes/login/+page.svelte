@@ -1,40 +1,16 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
   import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
   } from "$lib/components/ui/card";
   import { auth } from "$lib/firebase";
-  import {
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-  } from "firebase/auth";
+  import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
-
-  let email = "";
-  let password = "";
-  let loading = false;
-
-  async function handleLogin() {
-    loading = true;
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success("Logged in successfully!");
-      goto("/");
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      loading = false;
-    }
-  }
 
   async function handleGoogleLogin() {
     try {
@@ -50,38 +26,17 @@
 
 <div class="flex items-center justify-center min-h-[80vh] px-4">
   <Card class="w-full max-w-md">
-    <CardHeader>
-      <CardTitle class="text-2xl">Login</CardTitle>
-      <CardDescription
-        >Enter your credentials to access your account</CardDescription
-      >
+    <CardHeader class="text-center">
+      <CardTitle class="text-2xl">Welcome Back</CardTitle>
+      <CardDescription>Sign in to access your account</CardDescription>
     </CardHeader>
     <CardContent class="space-y-4">
-      <div class="space-y-2">
-        <Label for="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="m@example.com"
-          bind:value={email}
-        />
-      </div>
-      <div class="space-y-2">
-        <Label for="password">Password</Label>
-        <Input id="password" type="password" bind:value={password} />
-      </div>
-      <div class="relative">
-        <div class="absolute inset-0 flex items-center">
-          <span class="w-full border-t" />
-        </div>
-        <div class="relative flex justify-center text-xs uppercase">
-          <span class="bg-background px-2 text-muted-foreground"
-            >Or continue with</span
-          >
-        </div>
-      </div>
-      <Button variant="outline" class="w-full" onclick={handleGoogleLogin}>
-        <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24">
+      <Button
+        variant="outline"
+        class="w-full py-6 text-base"
+        onclick={handleGoogleLogin}
+      >
+        <svg class="mr-2 h-5 w-5" viewBox="0 0 24 24">
           <path
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
             fill="#4285F4"
@@ -99,19 +54,8 @@
             fill="#EA4335"
           />
         </svg>
-        Google
+        Continue with Google
       </Button>
     </CardContent>
-    <CardFooter class="flex flex-col gap-4">
-      <Button class="w-full" onclick={handleLogin} disabled={loading}>
-        {loading ? "Logging in..." : "Login"}
-      </Button>
-      <p class="text-sm text-center text-muted-foreground">
-        Don't have an account? <a
-          href="/register"
-          class="text-primary hover:underline">Sign up</a
-        >
-      </p>
-    </CardFooter>
   </Card>
 </div>

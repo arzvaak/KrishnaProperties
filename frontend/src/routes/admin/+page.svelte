@@ -11,7 +11,7 @@
 
   let stats: any = null;
   let loading = true;
-  let error = null;
+  let error: string | null = null;
 
   onMount(async () => {
     try {
