@@ -1,0 +1,67 @@
+
+> frontend@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: i:\KrishnaRealEstate\frontend
+Getting Svelte diagnostics...
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\admin\+page.svelte[39m:14:7
+[31mError[39m: Variable 'error' implicitly has type 'any' in some locations where its type cannot be determined. (ts)
+[36m  let loading = true;
+  let [35merror[36m = null;[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\admin\+page.svelte[39m:47:13
+[31mError[39m: Variable 'error' implicitly has an 'any' type. (ts)
+[36m    </div>
+  {:else if [35merror[36m}
+    <div class="text-red-500">Error: {error}</div>[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\admin\properties\+page.svelte[39m:69:22
+[31mError[39m: Type 'string' is not assignable to type 'number'. (ts)
+[36m        <TableRow>
+          <TableCell [35mcolspan[36m="5" class="text-center py-8">Loading...</TableCell>
+        </TableRow>[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\admin\properties\+page.svelte[39m:73:22
+[31mError[39m: Type 'string' is not assignable to type 'number'. (ts)
+[36m        <TableRow>
+          <TableCell [35mcolspan[36m="5" class="text-center py-8"
+            >No properties found.</TableCell[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\login\+page.svelte[39m:75:11
+[33mWarn[39m: Self-closing HTML tags for non-void elements are ambiguous ΓÇö use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+[36m        <div class="absolute inset-0 flex items-center">
+          [35m<span class="w-full border-t" />[36m
+        </div>[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\profile\+page.svelte[39m:44:28
+[31mError[39m: Property 'bio' does not exist on type 'User'. (ts)
+[36m                    phoneNumber: u.phoneNumber || "",
+                    bio: u.[35mbio[36m || "", // Assuming bio is added to custom claims or fetched separately
+                    photoURL: u.photoURL || "",[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\properties\[id]\+page.svelte[39m:578:5
+[33mWarn[39m: Unused CSS selector ".no-print"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m    :global(footer),
+    [35m.no-print[36m {
+      display: none !important;[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\register\+page.svelte[39m:109:9
+[31mError[39m: Expected token >
+https://svelte.dev/e/expected_token (svelte)
+[36m            fill="#EA4335"
+      </[35m[36mp>
+    </CardFooter>[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\register\+page.svelte[39m:109:9
+[31mError[39m: Expected token >
+https://svelte.dev/e/expected_token (ts)
+[36m            fill="#EA4335"
+      </[35m[36mp>
+    </CardFooter>[39m
+
+====================================
+[31msvelte-check found 7 errors and 2 warnings in 6 files
+[39m

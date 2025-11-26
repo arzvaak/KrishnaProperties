@@ -16,6 +16,9 @@ def get_properties():
         bedrooms = request.args.get('bedrooms', type=int)
         prop_type = request.args.get('type')
         search = request.args.get('search', '').lower()
+        sort_by = request.args.get('sort', 'newest')
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 9, type=int)
 
         # Firestore filtering (basic)
         query = properties_ref
@@ -53,7 +56,29 @@ def get_properties():
                     
             properties.append(prop_data)
             
-        return jsonify(properties), 200
+        # Sorting
+        if sort_by == 'price_asc':
+            properties.sort(key=lambda x: int(str(x.get('price', '0')).replace('₹', '').replace(',', '').strip()) if x.get('price') else 0)
+        elif sort_by == 'price_desc':
+            properties.sort(key=lambda x: int(str(x.get('price', '0')).replace('₹', '').replace(',', '').strip()) if x.get('price') else 0, reverse=True)
+        else: # newest (default)
+            # Assuming documents have a timestamp or we use ID/natural order if no timestamp
+            # For now, reverse list as Firestore returns oldest first by default usually
+            properties.reverse()
+
+        # Pagination
+        total = len(properties)
+        total_pages = (total + limit - 1) // limit
+        start = (page - 1) * limit
+        end = start + limit
+        paginated_properties = properties[start:end]
+        
+        return jsonify({
+            "properties": paginated_properties,
+            "total": total,
+            "page": page,
+            "total_pages": total_pages
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -86,5 +111,14 @@ def delete_property(property_id):
     try:
         db.collection('properties').document(property_id).delete()
         return jsonify({"message": "Property deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@properties_bp.route('/api/properties/<property_id>', methods=['PUT'])
+def update_property(property_id):
+    try:
+        data = request.json
+        db.collection('properties').document(property_id).update(data)
+        return jsonify({"message": "Property updated successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

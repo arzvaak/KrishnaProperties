@@ -82,10 +82,10 @@
                     <div>
                         <h3 class="font-semibold mb-1">Email</h3>
                         <p class="text-muted-foreground">
-                            hello@krishnarealestate.com
+                            hello@krishnaproperties.com
                         </p>
                         <p class="text-muted-foreground">
-                            support@krishnarealestate.com
+                            support@krishnaproperties.com
                         </p>
                     </div>
                 </div>
@@ -97,7 +97,7 @@
                     <div>
                         <h3 class="font-semibold mb-1">Office</h3>
                         <p class="text-muted-foreground">
-                            123 Real Estate Tower, <br />
+                            123 Properties Tower, <br />
                             Bandra West, Mumbai, <br />
                             Maharashtra 400050
                         </p>

@@ -16,7 +16,7 @@
 >
   <div class="container flex h-16 items-center justify-between">
     <a href="/" class="flex items-center gap-2 font-bold text-xl">
-      <span class="text-primary">Krishna</span>RealEstate
+      <span class="text-primary">Krishna</span>Properties
     </a>
 
     <div class="hidden md:flex items-center gap-6">

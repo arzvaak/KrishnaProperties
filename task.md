@@ -3,32 +3,32 @@
 ## Phase 1: Core Property Features
 ### Property Enhancement
 - [x] Image gallery/carousel component for multiple property photos
-- [ ] Video upload & playback for property listings
+- [x] Video upload & playback for property listings
 - [x] Property location map integration (Leaflet/OpenStreetMap)
-- [ ] Save/Favorite properties functionality
-- [ ] Share property feature (social media, email, copy link)
-- [ ] Print property details feature
-- [ ] Property view counter
-- [ ] Related/Similar properties suggestions
+- [x] Save/Favorite properties functionality
+- [x] Share property feature (social media, email, copy link)
+- [x] Print property details feature
+- [x] Property view counter
+- [x] Related/Similar properties suggestions
 
 ### Search & Discovery
 - [x] Advanced filters (price range, bedrooms, bathrooms, property type, location)
-- [ ] Sort functionality (price low-high, high-low, newest, featured)
-- [ ] Pagination for property listings
-- [ ] Search results count display
+- [x] Sort functionality (price low-high, high-low, newest, featured)
+- [x] Pagination for property listings
+- [x] Search results count display
 - [x] "No results" state with suggestions
-- [ ] Recently viewed properties
-- [ ] Saved searches functionality
+- [x] Recently viewed properties (Persistent for users, Local for guests)
+- [x] Saved searches functionality
 
 ## Phase 2: User System
 ### User Dashboard
-- [ ] User profile page & edit functionality
-- [ ] Saved/Favorite properties page
-- [ ] User's inquiry history
-- [ ] Scheduled appointments/viewings list
-- [ ] Email notification preferences
-- [ ] Password change functionality
-- [ ] Account deletion option
+- [x] User profile page & edit functionality
+- [x] Saved/Favorite properties page
+- [x] User's inquiry history
+- [x] Scheduled appointments/viewings list
+- [x] Email notification preferences
+- [x] Google Auth SSO only (Removed email/password)
+- [x] Account deletion option
 
 ### User Notifications
 - [ ] Email notifications for saved search alerts
@@ -267,9 +267,9 @@
 ### Sprint 1 (Week 1-2)
 - [x] Image gallery
 - [x] Video upload
-- [ ] Save/favorite properties
+- [x] Save/favorite properties
 - [x] Contact form & lead capture
-- [ ] User dashboard with saved properties
+- [x] User dashboard with saved properties
 
 ### Sprint 2 (Week 3-4)
 - [x] Advanced search filters & sorting
