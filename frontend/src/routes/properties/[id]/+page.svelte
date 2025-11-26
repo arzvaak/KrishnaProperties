@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { onMount } from "svelte";
+  import { user } from "$lib/stores/auth";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Card, CardContent } from "$lib/components/ui/card";
@@ -14,6 +15,8 @@
     Mail,
     ChevronLeft,
     ChevronRight,
+    Heart,
+    Share2,
   } from "lucide-svelte";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { toast } from "svelte-sonner";
@@ -24,12 +27,62 @@
   let property: any = null;
   let similarProperties: any[] = [];
   let loading = true;
-  let error = null;
+  let error: string | null = null;
   const id = $page.params.id;
   let emblaApi: any;
 
   let message = "";
   let contactSent = false;
+  let isFavorite = false;
+
+  async function toggleFavorite() {
+    if (!$user) {
+      toast.error("Please login to save properties");
+      return;
+    }
+
+    try {
+      const method = isFavorite ? "DELETE" : "POST";
+      const url = isFavorite
+        ? `http://127.0.0.1:5000/api/users/${$user.uid}/favorites/${id}`
+        : `http://127.0.0.1:5000/api/users/${$user.uid}/favorites`;
+
+      const body = isFavorite ? undefined : JSON.stringify({ propertyId: id });
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+
+      if (!response.ok) throw new Error("Failed to update favorites");
+
+      isFavorite = !isFavorite;
+      toast.success(
+        isFavorite ? "Added to favorites" : "Removed from favorites",
+      );
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }
+
+  function getEmbedUrl(url: string) {
+    if (!url) return null;
+
+    // YouTube
+    const ytMatch = url.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^#&?]*).*/,
+    );
+    if (ytMatch && ytMatch[1])
+      return `https://www.youtube.com/embed/${ytMatch[1]}`;
+
+    // Vimeo
+    const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
+    if (vimeoMatch && vimeoMatch[1])
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+
+    return null;
+  }
 
   async function handleContact() {
     try {
@@ -61,8 +114,26 @@
 
       const [propResponse, allPropsResponse] = await Promise.all([
         fetch(`http://127.0.0.1:5000/api/properties/${id}`),
+        fetch(`http://127.0.0.1:5000/api/properties/${id}`),
         fetch(`http://127.0.0.1:5000/api/properties`),
       ]);
+
+      // Check if favorite
+      user.subscribe(async (u) => {
+        if (u) {
+          try {
+            const res = await fetch(
+              `http://127.0.0.1:5000/api/users/${u.uid}/favorites`,
+            );
+            if (res.ok) {
+              const favs = await res.json();
+              isFavorite = favs.some((f: any) => f.id === id);
+            }
+          } catch (e) {
+            console.error("Failed to check favorite status");
+          }
+        }
+      });
 
       if (!propResponse.ok) throw new Error("Failed to fetch property details");
       property = await propResponse.json();
@@ -134,6 +205,32 @@
                   />
                 </div>
               {/if}
+
+              <!-- Video Slide -->
+              {#if property.videoUrl}
+                <div
+                  class="flex-[0_0_100%] min-w-0 relative h-[500px] bg-black flex items-center justify-center"
+                >
+                  {#if property.videoType === "file" || !getEmbedUrl(property.videoUrl)}
+                    <video
+                      src={property.videoUrl}
+                      controls
+                      class="w-full h-full max-h-[500px]"
+                    >
+                      <track kind="captions" />
+                    </video>
+                  {:else}
+                    <iframe
+                      src={getEmbedUrl(property.videoUrl)}
+                      title="Property Video"
+                      class="w-full h-full"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    ></iframe>
+                  {/if}
+                </div>
+              {/if}
             </div>
           </div>
 
@@ -153,7 +250,21 @@
         </div>
 
         <div>
-          <h1 class="text-3xl font-bold mb-2">{property.title}</h1>
+          <div class="flex justify-between items-start mb-2">
+            <h1 class="text-3xl font-bold">{property.title}</h1>
+            <div class="flex gap-2">
+              <Button variant="outline" size="icon" onclick={toggleFavorite}>
+                <Heart
+                  class="w-5 h-5 {isFavorite
+                    ? 'fill-red-500 text-red-500'
+                    : ''}"
+                />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Share2 class="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
           <div class="flex items-center text-muted-foreground mb-4">
             <MapPin class="w-5 h-5 mr-2" />
             <span class="text-lg">{property.location}</span>

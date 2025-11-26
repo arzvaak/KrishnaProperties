@@ -266,7 +266,7 @@
 
 ### Sprint 1 (Week 1-2)
 - [x] Image gallery
-- [ ] Video upload
+- [x] Video upload
 - [ ] Save/favorite properties
 - [x] Contact form & lead capture
 - [ ] User dashboard with saved properties
@@ -275,7 +275,7 @@
 - [x] Advanced search filters & sorting
 - [ ] Lead management dashboard
 - [ ] Email notifications
-- [ ] Property analytics
+- [x] Property analytics
 - [x] Homepage with featured listings
 
 ### Sprint 3 (Week 5-6)
@@ -289,8 +289,8 @@
 - [ ] Blog system
 - [x] Mortgage calculator
 - [ ] Property comparison tool
-- [ ] Analytics dashboard
-- [ ] Static pages (About, Contact, FAQ)
+- [x] Analytics dashboard
+- [x] Static pages (Contact Page Done)
 
 ### Sprint 5 (Week 9-10)
 - [ ] Review system
