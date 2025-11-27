@@ -4,11 +4,12 @@
   import { auth } from "$lib/firebase";
   import { signOut } from "firebase/auth";
   import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
-  import { MessageCircle } from "lucide-svelte";
+  import { MessageCircle, Menu, X } from "lucide-svelte";
   import { db } from "$lib/firebase";
   import { doc, onSnapshot } from "firebase/firestore";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
 
   import {
     collection,
@@ -23,12 +24,23 @@
   let unreadCount: number = 0;
   let unsubscribe: () => void;
   let previousUnreadCount: number = 0;
+  let mobileMenuOpen = false;
+  let scrolled = false;
+
+  onMount(() => {
+    const handleScroll = () => {
+      scrolled = window.scrollY > 20;
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  });
+
+  $: isHomepage = $page.url.pathname === "/";
 
   $: if ($user) {
     if (unsubscribe) unsubscribe();
 
     if ($isAdmin) {
-      // Admin: Listen to all conversations with unread messages for admin
       const q = query(
         collection(db, "conversations"),
         where("unreadCount.admin", ">", 0),
@@ -46,8 +58,6 @@
           newMessages = true;
         }
 
-        // Initial load shouldn't trigger toast unless we want it to
-        // But simpler to just track increase
         if (newMessages) {
           toast.info("You have new messages");
         }
@@ -56,7 +66,6 @@
         previousUnreadCount = totalUnread;
       });
     } else {
-      // User: Listen to their own conversation
       unsubscribe = onSnapshot(
         doc(db, "conversations", $user.uid),
         (doc: DocumentSnapshot<DocumentData>) => {
@@ -92,99 +101,178 @@
     await signOut(auth);
     goto("/");
   }
+
+  function toggleMobileMenu() {
+    mobileMenuOpen = !mobileMenuOpen;
+  }
 </script>
 
 <nav
-  class="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50"
+  class={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    scrolled
+      ? "bg-primary/95 backdrop-blur-md shadow-lg py-2"
+      : "bg-transparent py-6"
+  } border-b ${scrolled ? "border-white/10" : "border-transparent"} text-primary-foreground`}
 >
-  <div class="container flex h-16 items-center justify-between">
-    <a href="/" class="flex items-center gap-2 font-bold text-xl">
-      <span class="text-primary">Krishna</span>Properties
+  <div class="container flex items-center justify-between">
+    <a
+      href="/"
+      class="flex items-center gap-2 font-bold text-2xl tracking-tight"
+    >
+      <span class="text-amber-400">Krishna</span><span class="text-white"
+        >Properties</span
+      >
     </a>
 
-    <div class="hidden md:flex items-center gap-6">
+    <!-- Desktop Menu -->
+    <div class="hidden md:flex items-center gap-8">
       <a
         href="/properties"
-        class="text-sm font-medium hover:text-primary transition-colors"
+        class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
         >Properties</a
       >
       <a
         href="/requests"
-        class="text-sm font-medium hover:text-primary transition-colors"
+        class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
         >Dream Home</a
       >
       <a
         href="/about"
-        class="text-sm font-medium hover:text-primary transition-colors"
+        class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
         >About</a
       >
       <a
         href="/contact"
-        class="text-sm font-medium hover:text-primary transition-colors"
+        class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
         >Contact</a
       >
     </div>
-    <div class="flex items-center gap-4">
+
+    <div class="hidden md:flex items-center gap-4">
       {#if $user}
         {#if $isAdmin}
           <a
             href="/admin"
-            class="text-sm font-bold text-primary hover:underline"
+            class="text-sm font-bold text-amber-400 hover:text-amber-300 transition-colors"
             >Admin Panel</a
           >
           <a
-            href="/admin/messages"
-            class="relative text-gray-600 hover:text-primary transition-colors"
+            href="/admin/leads"
+            class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
+            >Leads</a
           >
-            <MessageCircle size={20} />
-            {#if unreadCount > 0}
-              <span
-                class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-              >
-                {unreadCount}
-              </span>
-            {/if}
-          </a>
         {/if}
-        {#if !$isAdmin}
-          <a
-            href="/messages"
-            class="relative text-gray-600 hover:text-primary transition-colors"
-          >
-            <MessageCircle size={20} />
-            {#if unreadCount > 0}
-              <span
-                class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-              >
-                {unreadCount}
-              </span>
-            {/if}
-          </a>
-        {/if}
+
+        <a
+          href={$isAdmin ? "/admin/messages" : "/messages"}
+          class="relative text-white/80 hover:text-amber-400 transition-colors"
+        >
+          <MessageCircle size={20} />
+          {#if unreadCount > 0}
+            <span
+              class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm"
+            >
+              {unreadCount}
+            </span>
+          {/if}
+        </a>
+
         <a
           href="/account/favorites"
-          class="text-sm font-medium hover:text-primary transition-colors"
+          class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
           >Saved</a
         >
         <a
-          href="/my-activity"
-          class="text-sm font-medium hover:text-primary transition-colors"
-          >My Activity</a
-        >
-        <a
           href="/profile"
-          class="text-sm font-medium hover:text-primary transition-colors"
+          class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
           >Profile</a
         >
-        <Button variant="outline" size="sm" onclick={handleLogout}
-          >Logout</Button
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={handleLogout}
+          class="border-white/20 text-white hover:bg-white/10 hover:text-white bg-transparent"
         >
+          Logout
+        </Button>
       {:else}
-        <div class="flex items-center gap-2">
-          <Button variant="ghost" size="sm" href="/login">Login</Button>
-          <Button size="sm" href="/register">Sign Up</Button>
+        <div class="flex items-center gap-3">
+          <a
+            href="/login"
+            class="text-sm font-medium text-white hover:text-amber-400 transition-colors"
+            >Login</a
+          >
+          <Button
+            size="sm"
+            href="/register"
+            class="bg-amber-500 hover:bg-amber-600 text-black font-semibold border-none"
+            >Sign Up</Button
+          >
         </div>
       {/if}
     </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="md:hidden text-white" onclick={toggleMobileMenu}>
+      {#if mobileMenuOpen}
+        <X size={24} />
+      {:else}
+        <Menu size={24} />
+      {/if}
+    </button>
   </div>
+
+  <!-- Mobile Menu -->
+  {#if mobileMenuOpen}
+    <div
+      class="md:hidden absolute top-full left-0 right-0 bg-primary border-b border-white/10 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2"
+    >
+      <a
+        href="/properties"
+        class="text-white/80 hover:text-amber-400"
+        onclick={toggleMobileMenu}>Properties</a
+      >
+      <a
+        href="/requests"
+        class="text-white/80 hover:text-amber-400"
+        onclick={toggleMobileMenu}>Dream Home</a
+      >
+      <a
+        href="/about"
+        class="text-white/80 hover:text-amber-400"
+        onclick={toggleMobileMenu}>About</a
+      >
+      <a
+        href="/contact"
+        class="text-white/80 hover:text-amber-400"
+        onclick={toggleMobileMenu}>Contact</a
+      >
+      <hr class="border-white/10" />
+      {#if $user}
+        <a
+          href="/profile"
+          class="text-white/80 hover:text-amber-400"
+          onclick={toggleMobileMenu}>Profile</a
+        >
+        <button
+          class="text-left text-white/80 hover:text-amber-400"
+          onclick={() => {
+            handleLogout();
+            toggleMobileMenu();
+          }}>Logout</button
+        >
+      {:else}
+        <a
+          href="/login"
+          class="text-white/80 hover:text-amber-400"
+          onclick={toggleMobileMenu}>Login</a
+        >
+        <a
+          href="/register"
+          class="text-amber-400 font-medium"
+          onclick={toggleMobileMenu}>Sign Up</a
+        >
+      {/if}
+    </div>
+  {/if}
 </nav>

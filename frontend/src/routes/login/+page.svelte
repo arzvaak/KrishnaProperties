@@ -24,7 +24,7 @@
   }
 </script>
 
-<div class="flex items-center justify-center min-h-[80vh] px-4">
+<div class="flex items-center justify-center min-h-[80vh] px-4 pt-24">
   <Card class="w-full max-w-md">
     <CardHeader class="text-center">
       <CardTitle class="text-2xl">Welcome Back</CardTitle>

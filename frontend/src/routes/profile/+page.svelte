@@ -8,29 +8,35 @@
     import { Switch } from "$lib/components/ui/switch";
     import * as Avatar from "$lib/components/ui/avatar";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
-    import {
-        Card,
-        CardContent,
-        CardHeader,
-        CardTitle,
-        CardDescription,
-        CardFooter,
-    } from "$lib/components/ui/card";
     import { toast } from "svelte-sonner";
-    import { Loader2, User, Phone, Mail } from "lucide-svelte";
+    import {
+        Loader2,
+        User,
+        Phone,
+        Mail,
+        Settings,
+        Shield,
+        Bell,
+    } from "lucide-svelte";
     import { goto } from "$app/navigation";
     import { deleteUser } from "firebase/auth";
 
     let loading = false;
-    let isEditing = false;
+    let activeTab = "general";
     let profile = {
         displayName: "",
         email: "",
         phoneNumber: "",
         bio: "",
         photoURL: "",
-        emailNotifications: false, // Default to false
+        emailNotifications: false,
     };
+
+    const tabs = [
+        { id: "general", label: "General", icon: User },
+        { id: "preferences", label: "Preferences", icon: Bell },
+        { id: "settings", label: "Settings", icon: Settings },
+    ];
 
     onMount(() => {
         user.subscribe((u) => {
@@ -41,7 +47,7 @@
                     phoneNumber: u.phoneNumber || "",
                     bio: (u as any).bio || "",
                     photoURL: u.photoURL || "",
-                    emailNotifications: false, // Default to false
+                    emailNotifications: false,
                 };
                 fetchProfile(u.uid);
             }
@@ -82,7 +88,6 @@
             if (!res.ok) throw new Error("Failed to update profile");
 
             toast.success("Profile updated successfully");
-            isEditing = false;
         } catch (e: any) {
             toast.error(e.message);
         } finally {
@@ -94,12 +99,9 @@
         if (!$user) return;
         loading = true;
         try {
-            // 1. Call backend to delete user data
             const res = await fetch(
                 `http://127.0.0.1:5000/api/users/${$user.uid}`,
-                {
-                    method: "DELETE",
-                },
+                { method: "DELETE" },
             );
 
             if (!res.ok) {
@@ -107,9 +109,7 @@
                 throw new Error(err.error || "Failed to delete account data");
             }
 
-            // 2. Delete user from Firebase Auth
             await deleteUser($user);
-
             toast.success("Account deleted successfully");
             goto("/");
         } catch (e: any) {
@@ -123,226 +123,224 @@
             loading = false;
         }
     }
-
-    function handleCancel() {
-        isEditing = false;
-        if ($user) fetchProfile($user.uid);
-    }
 </script>
 
-<div class="container py-10 max-w-2xl">
-    <Card>
-        <CardHeader>
-            <div class="flex justify-between items-start">
-                <div>
-                    <CardTitle class="text-2xl">My Profile</CardTitle>
-                    <CardDescription
-                        >Manage your personal information</CardDescription
+<div class="container py-10 pt-24 max-w-5xl">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight">Account Settings</h1>
+        <p class="text-muted-foreground">
+            Manage your profile and preferences.
+        </p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-8">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <nav class="flex flex-col space-y-1">
+                {#each tabs as tab}
+                    <button
+                        onclick={() => (activeTab = tab.id)}
+                        class={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                            activeTab === tab.id
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}
                     >
-                </div>
-                {#if !isEditing}
-                    <Button variant="outline" onclick={() => (isEditing = true)}
-                        >Edit Profile</Button
-                    >
-                {/if}
-            </div>
-        </CardHeader>
-        <CardContent class="space-y-6">
-            <!-- Avatar Section -->
-            <div class="flex flex-col items-center space-y-4">
-                <Avatar.Root class="h-24 w-24">
-                    <Avatar.Image
-                        src={profile.photoURL}
-                        alt={profile.displayName}
-                    />
-                    <Avatar.Fallback class="text-2xl"
-                        >{profile.displayName?.charAt(0) ||
-                            "U"}</Avatar.Fallback
-                    >
-                </Avatar.Root>
-                {#if isEditing}
-                    <div class="w-full max-w-sm">
-                        <Label for="photoURL">Avatar URL</Label>
-                        <div class="flex gap-2 mt-1">
-                            <Input
-                                id="photoURL"
-                                bind:value={profile.photoURL}
-                                placeholder="https://..."
-                            />
-                        </div>
-                        <p class="text-xs text-muted-foreground mt-1">
-                            Enter a URL for your profile picture.
-                        </p>
-                    </div>
-                {/if}
-            </div>
+                        <svelte:component this={tab.icon} size={18} />
+                        {tab.label}
+                    </button>
+                {/each}
+            </nav>
+        </aside>
 
-            <div class="grid gap-4">
-                <div class="grid gap-2">
-                    <Label for="name">Display Name</Label>
-                    {#if isEditing}
-                        <div class="relative">
-                            <User
-                                class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-                            />
-                            <Input
-                                id="name"
-                                bind:value={profile.displayName}
-                                class="pl-9"
-                            />
-                        </div>
-                    {:else}
-                        <div
-                            class="flex items-center p-2 border rounded-md bg-muted/50"
-                        >
-                            <User class="mr-2 h-4 w-4 text-muted-foreground" />
-                            {profile.displayName || "Not set"}
-                        </div>
-                    {/if}
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="email">Email</Label>
-                    <div
-                        class="flex items-center p-2 border rounded-md bg-muted/50 opacity-70 cursor-not-allowed"
-                    >
-                        <Mail class="mr-2 h-4 w-4 text-muted-foreground" />
-                        {profile.email}
-                    </div>
-                    <p class="text-xs text-muted-foreground">
-                        Email cannot be changed.
-                    </p>
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="phone">Phone Number</Label>
-                    {#if isEditing}
-                        <div class="relative">
-                            <Phone
-                                class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-                            />
-                            <Input
-                                id="phone"
-                                bind:value={profile.phoneNumber}
-                                class="pl-9"
-                                placeholder="+91 98765 43210"
-                            />
-                        </div>
-                    {:else}
-                        <div
-                            class="flex items-center p-2 border rounded-md bg-muted/50"
-                        >
-                            <Phone class="mr-2 h-4 w-4 text-muted-foreground" />
-                            {profile.phoneNumber || "Not set"}
-                        </div>
-                    {/if}
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="bio">Bio</Label>
-                    {#if isEditing}
-                        <div class="relative">
-                            <Textarea
-                                id="bio"
-                                bind:value={profile.bio}
-                                placeholder="Tell us about yourself..."
-                                class="min-h-[100px]"
-                            />
-                        </div>
-                    {:else}
-                        <div
-                            class="p-3 border rounded-md bg-muted/50 min-h-[60px] whitespace-pre-wrap"
-                        >
-                            {profile.bio || "No bio added yet."}
-                        </div>
-                    {/if}
-                </div>
-            </div>
-
-            <div class="pt-6 border-t">
-                <h3 class="text-lg font-medium mb-4">
-                    Notification Preferences
-                </h3>
-                <div class="flex items-center justify-between space-x-2">
-                    <Label
-                        for="email-notifications"
-                        class="flex flex-col space-y-1"
-                    >
-                        <span>Email Notifications</span>
-                        <span class="font-normal text-xs text-muted-foreground">
-                            Receive updates about your inquiries and
-                            appointments.
-                        </span>
-                    </Label>
-                    <Switch
-                        id="email-notifications"
-                        bind:checked={profile.emailNotifications}
-                        disabled={!isEditing}
-                    />
-                </div>
-            </div>
-
-            <div class="pt-6 border-t">
-                <h3 class="text-lg font-medium mb-4 text-destructive">
-                    Danger Zone
-                </h3>
+        <!-- Content -->
+        <div class="flex-1 max-w-2xl">
+            {#if activeTab === "general"}
                 <div
-                    class="flex items-center justify-between p-4 border border-destructive/50 rounded-lg bg-destructive/5"
+                    class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
                 >
-                    <div class="space-y-1">
-                        <p class="font-medium text-destructive">
-                            Delete Account
+                    <div class="bg-card rounded-xl border shadow-sm p-6">
+                        <h2 class="text-lg font-semibold mb-1">
+                            Profile Information
+                        </h2>
+                        <p class="text-sm text-muted-foreground mb-6">
+                            Update your photo and personal details.
                         </p>
-                        <p class="text-sm text-muted-foreground">
-                            Permanently delete your account and all data.
-                        </p>
+
+                        <div class="space-y-6">
+                            <!-- Avatar -->
+                            <div class="flex items-center gap-6">
+                                <Avatar.Root
+                                    class="h-20 w-20 border-2 border-muted"
+                                >
+                                    <Avatar.Image
+                                        src={profile.photoURL}
+                                        alt={profile.displayName}
+                                    />
+                                    <Avatar.Fallback class="text-xl"
+                                        >{profile.displayName?.charAt(0) ||
+                                            "U"}</Avatar.Fallback
+                                    >
+                                </Avatar.Root>
+                                <div class="flex-1 space-y-2">
+                                    <Label for="photoURL">Avatar URL</Label>
+                                    <Input
+                                        id="photoURL"
+                                        bind:value={profile.photoURL}
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="grid gap-4">
+                                <div class="grid gap-2">
+                                    <Label for="name">Display Name</Label>
+                                    <Input
+                                        id="name"
+                                        bind:value={profile.displayName}
+                                    />
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <Label for="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        value={profile.email}
+                                        disabled
+                                        class="bg-muted/50"
+                                    />
+                                    <p
+                                        class="text-[10px] text-muted-foreground"
+                                    >
+                                        Email cannot be changed.
+                                    </p>
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <Label for="phone">Phone Number</Label>
+                                    <Input
+                                        id="phone"
+                                        bind:value={profile.phoneNumber}
+                                        placeholder="+91..."
+                                    />
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <Label for="bio">Bio</Label>
+                                    <Textarea
+                                        id="bio"
+                                        bind:value={profile.bio}
+                                        placeholder="Tell us about yourself..."
+                                        class="min-h-[100px]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <Button onclick={handleSave} disabled={loading}>
+                                {#if loading}
+                                    <Loader2
+                                        class="mr-2 h-4 w-4 animate-spin"
+                                    />
+                                    Saving...
+                                {:else}
+                                    Save Changes
+                                {/if}
+                            </Button>
+                        </div>
                     </div>
-                    <AlertDialog.Root>
-                        <AlertDialog.Trigger>
-                            <Button variant="destructive">Delete Account</Button
-                            >
-                        </AlertDialog.Trigger>
-                        <AlertDialog.Content>
-                            <AlertDialog.Header>
-                                <AlertDialog.Title
-                                    >Are you absolutely sure?</AlertDialog.Title
-                                >
-                                <AlertDialog.Description>
-                                    This action cannot be undone. This will
-                                    permanently delete your account and remove
-                                    your data from our servers.
-                                </AlertDialog.Description>
-                            </AlertDialog.Header>
-                            <AlertDialog.Footer>
-                                <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                                <AlertDialog.Action
-                                    class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onclick={handleDeleteAccount}
-                                >
-                                    Delete Account
-                                </AlertDialog.Action>
-                            </AlertDialog.Footer>
-                        </AlertDialog.Content>
-                    </AlertDialog.Root>
                 </div>
-            </div>
-        </CardContent>
-        {#if isEditing}
-            <CardFooter class="flex justify-end gap-2">
-                <Button
-                    variant="ghost"
-                    onclick={handleCancel}
-                    disabled={loading}>Cancel</Button
+            {:else if activeTab === "preferences"}
+                <div
+                    class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
                 >
-                <Button onclick={handleSave} disabled={loading}>
-                    {#if loading}
-                        <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                    {:else}
-                        Save Changes
-                    {/if}
-                </Button>
-            </CardFooter>
-        {/if}
-    </Card>
+                    <div class="bg-card rounded-xl border shadow-sm p-6">
+                        <h2 class="text-lg font-semibold mb-1">
+                            Notifications
+                        </h2>
+                        <p class="text-sm text-muted-foreground mb-6">
+                            Manage how you receive updates.
+                        </p>
+
+                        <div class="flex items-center justify-between py-4">
+                            <div class="space-y-0.5">
+                                <Label class="text-base"
+                                    >Email Notifications</Label
+                                >
+                                <p class="text-sm text-muted-foreground">
+                                    Receive updates about your inquiries and
+                                    appointments.
+                                </p>
+                            </div>
+                            <Switch
+                                bind:checked={profile.emailNotifications}
+                                onCheckedChange={handleSave}
+                            />
+                        </div>
+                    </div>
+                </div>
+            {:else if activeTab === "settings"}
+                <div
+                    class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                >
+                    <div
+                        class="bg-card rounded-xl border border-destructive/20 shadow-sm p-6"
+                    >
+                        <h2 class="text-lg font-semibold mb-1 text-destructive">
+                            Danger Zone
+                        </h2>
+                        <p class="text-sm text-muted-foreground mb-6">
+                            Irreversible actions for your account.
+                        </p>
+
+                        <div
+                            class="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5"
+                        >
+                            <div class="space-y-1">
+                                <p class="font-medium text-destructive">
+                                    Delete Account
+                                </p>
+                                <p class="text-sm text-muted-foreground">
+                                    Permanently delete your account and all
+                                    data.
+                                </p>
+                            </div>
+                            <AlertDialog.Root>
+                                <AlertDialog.Trigger>
+                                    <Button variant="destructive" size="sm"
+                                        >Delete Account</Button
+                                    >
+                                </AlertDialog.Trigger>
+                                <AlertDialog.Content>
+                                    <AlertDialog.Header>
+                                        <AlertDialog.Title
+                                            >Are you absolutely sure?</AlertDialog.Title
+                                        >
+                                        <AlertDialog.Description>
+                                            This action cannot be undone. This
+                                            will permanently delete your account
+                                            and remove your data from our
+                                            servers.
+                                        </AlertDialog.Description>
+                                    </AlertDialog.Header>
+                                    <AlertDialog.Footer>
+                                        <AlertDialog.Cancel
+                                            >Cancel</AlertDialog.Cancel
+                                        >
+                                        <AlertDialog.Action
+                                            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            onclick={handleDeleteAccount}
+                                        >
+                                            Delete Account
+                                        </AlertDialog.Action>
+                                    </AlertDialog.Footer>
+                                </AlertDialog.Content>
+                            </AlertDialog.Root>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+        </div>
+    </div>
 </div>

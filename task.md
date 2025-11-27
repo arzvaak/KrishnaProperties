@@ -40,11 +40,10 @@
 ### Lead Generation
 - [x] Contact form on property details page
 - [x] "Request Info" button with modal
-- [ ] Lead dashboard with status pipeline
-- [ ] Lead detail view
-- [ ] Lead status updates (New/Contacted/Qualified/Converted/Lost)
-- [ ] Lead assignment system
-- [ ] Lead notes & activity log
+- [x] Lead dashboard with status pipeline
+- [x] Lead detail view
+- [x] Lead status updates (New/Contacted/Qualified/Converted/Lost)
+- [x] Lead notes & activity log
 - [ ] Lead source tracking
 - [ ] Export leads to CSV
 

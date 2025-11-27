@@ -159,16 +159,14 @@
     });
 </script>
 
-<div
-    class="flex flex-col h-[600px] bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
->
+<div class="flex flex-col h-full bg-card overflow-hidden">
     <!-- Header -->
     <div
         class="bg-primary px-4 py-3 flex items-center justify-between text-primary-foreground"
     >
         <div class="flex items-center gap-3">
             <div
-                class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold"
+                class="w-10 h-10 rounded-full bg-card/20 flex items-center justify-center text-lg font-bold"
             >
                 {recipientName[0]}
             </div>
@@ -193,7 +191,7 @@
                 <div
                     class="max-w-[70%] {msg.senderId === $user?.uid
                         ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-white border border-gray-200 rounded-bl-none'} rounded-2xl px-4 py-2 shadow-sm"
+                        : 'bg-card border border-border rounded-bl-none'} rounded-2xl px-4 py-2 shadow-sm"
                 >
                     {#if msg.attachments && msg.attachments.length > 0}
                         <div class="mb-2 space-y-2">
@@ -237,7 +235,7 @@
     </div>
 
     <!-- Input -->
-    <div class="p-4 bg-white border-t border-gray-200">
+    <div class="p-4 bg-card border-t border-border">
         {#if selectedFile}
             <div
                 class="flex items-center gap-2 mb-2 p-2 bg-gray-100 rounded-lg w-fit"

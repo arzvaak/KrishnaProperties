@@ -3,7 +3,13 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
-  import { LayoutDashboard, PlusCircle, List, Settings } from "lucide-svelte";
+  import {
+    LayoutDashboard,
+    PlusCircle,
+    List,
+    Settings,
+    Users,
+  } from "lucide-svelte";
   import { toast } from "svelte-sonner";
 
   onMount(() => {
@@ -25,7 +31,7 @@
   });
 </script>
 
-<div class="flex min-h-screen">
+<div class="flex min-h-screen pt-20">
   <!-- Sidebar -->
   <aside class="w-64 bg-muted/30 border-r hidden md:block">
     <div class="p-6">
@@ -40,6 +46,13 @@
           href="/admin/properties"
         >
           <List class="mr-2 h-4 w-4" /> Properties
+        </Button>
+        <Button
+          variant="ghost"
+          class="w-full justify-start"
+          href="/admin/leads"
+        >
+          <Users class="mr-2 h-4 w-4" /> Leads
         </Button>
         <Button
           variant="ghost"

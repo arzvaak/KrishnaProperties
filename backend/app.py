@@ -9,6 +9,7 @@ from routes.appointments import appointments_bp
 from routes.requests import requests_bp
 from routes.inquiries import inquiries_bp
 from routes.chat import chat_bp
+from routes.leads import leads_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -20,6 +21,7 @@ app.register_blueprint(appointments_bp)
 app.register_blueprint(requests_bp)
 app.register_blueprint(inquiries_bp)
 app.register_blueprint(chat_bp)
+app.register_blueprint(leads_bp)
 
 # Initialize Firebase
 try:
