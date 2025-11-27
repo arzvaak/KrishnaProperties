@@ -39,21 +39,7 @@
 ## Phase 3: Lead & Communication
 ### Lead Generation
 - [x] Contact form on property details page
-- [ ] "Request Info" button with modal
-- [ ] Schedule viewing/appointment booking system
-- [ ] Lead capture API endpoints
-- [ ] Email notifications for new leads
-- [ ] Auto-responder emails to users
-
-### Communication System
-- [ ] Real-time chat system (admin-user messaging)
-- [ ] Chat history persistence
-- [ ] Unread message indicators
-- [ ] Message notifications
-- [ ] File sharing in chat (images, documents)
-
-## Phase 4: Admin Dashboard Enhancement
-### Lead Management
+- [x] "Request Info" button with modal
 - [ ] Lead dashboard with status pipeline
 - [ ] Lead detail view
 - [ ] Lead status updates (New/Contacted/Qualified/Converted/Lost)
@@ -61,6 +47,13 @@
 - [ ] Lead notes & activity log
 - [ ] Lead source tracking
 - [ ] Export leads to CSV
+
+### Communication System
+- [x] Real-time chat system (admin-user messaging)
+- [x] Chat history persistence
+- [x] Unread message indicators
+- [x] Message notifications
+- [x] File sharing in chat (images, documents)
 
 ### Property Management
 - [ ] Property status management (Active/Pending/Sold/Rented)
@@ -279,7 +272,7 @@
 - [x] Homepage with featured listings
 
 ### Sprint 3 (Week 5-6)
-- [ ] Real-time chat system
+- [x] Real-time chat system
 - [ ] Appointment booking
 - [ ] Admin/Superadmin profiles & roles
 - [ ] Property status management

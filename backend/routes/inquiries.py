@@ -29,6 +29,15 @@ def create_inquiry():
 
         db.collection('inquiries').add(inquiry_data)
         
+        # Send Notifications
+        try:
+            from utils.email_service import notify_admin_new_lead, send_inquiry_auto_reply
+            notify_admin_new_lead('Inquiry', inquiry_data)
+            if inquiry_data.get('email') and inquiry_data.get('name'):
+                send_inquiry_auto_reply(inquiry_data['email'], inquiry_data['name'])
+        except Exception as e:
+            print(f"Failed to send email notifications: {e}")
+        
         return jsonify({"message": "Inquiry sent successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500

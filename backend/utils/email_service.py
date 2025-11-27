@@ -100,3 +100,57 @@ def notify_appointment_confirmation(user_email, property_title, date, time):
     Krishna Properties Team
     """
     send_email(user_email, subject, body)
+
+def notify_admin_new_lead(lead_type, data):
+    """
+    Notifies the admin about a new lead.
+    lead_type: 'Appointment', 'Property Request', 'Inquiry'
+    data: Dictionary containing lead details
+    """
+    # In a real app, this would be the admin's email
+    admin_email = "admin@krishnaproperties.com" 
+    subject = f"New Lead Alert: {lead_type}"
+    
+    details = ""
+    for key, value in data.items():
+        details += f"<b>{key}:</b> {value}<br>"
+
+    body = f"""
+    <h2>New {lead_type} Received</h2>
+    <p>A new lead has been submitted on the website.</p>
+    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+        {details}
+    </div>
+    <p>Please check the admin dashboard for more details.</p>
+    """
+    # For now, we'll just log it or send to a dev email if configured
+    # In production, you'd send this to the actual admin
+    send_email(EMAIL_FROM, subject, body) # Sending to sender for testing purposes
+
+def send_inquiry_auto_reply(user_email, name):
+    subject = "We received your inquiry - Krishna Properties"
+    body = f"""
+    Hello {name},
+
+    Thank you for contacting Krishna Properties. We have received your message and our team will get back to you shortly.
+
+    If your inquiry is urgent, please feel free to call us at +91 98765 43210.
+
+    Best regards,
+    Krishna Properties Team
+    """
+    send_email(user_email, subject, body)
+
+def send_request_auto_reply(user_email, name):
+    subject = "Dream Home Request Received - Krishna Properties"
+    body = f"""
+    Hello {name},
+
+    Thank you for submitting your Dream Home request! 
+    
+    We have received your preferences and our agents are already looking for properties that match your criteria. We will contact you as soon as we find something perfect for you.
+
+    Best regards,
+    Krishna Properties Team
+    """
+    send_email(user_email, subject, body)

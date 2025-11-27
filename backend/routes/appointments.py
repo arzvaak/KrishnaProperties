@@ -49,13 +49,18 @@ def create_appointment():
         
         # Send Email Notification
         try:
+            from utils.email_service import notify_appointment_confirmation, notify_admin_new_lead
+            
+            # Notify Admin
+            notify_admin_new_lead('Appointment', appointment_data)
+
+            # Notify User
             user = auth.get_user(user_id)
             if user.email:
                 # Fetch property title for the email
                 prop_doc = db.collection('properties').document(property_id).get()
                 prop_title = prop_doc.to_dict().get('title', 'Property') if prop_doc.exists else 'Property'
                 
-                from utils.email_service import notify_appointment_confirmation
                 notify_appointment_confirmation(user.email, prop_title, date, time)
         except Exception as e:
             print(f"Failed to send email: {e}")
