@@ -1,13 +1,14 @@
-<script>
+<script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { user } from "$lib/stores/auth";
     import { Search } from "lucide-svelte";
+    import type { Timestamp } from "firebase/firestore";
 
-    export let conversations = [];
-    export let selectedConversationId = null;
+    export let conversations: any[] = [];
+    export let selectedConversationId: string | null = null;
 
     const dispatch = createEventDispatcher();
-    let searchQuery = "";
+    let searchQuery: string = "";
 
     $: filteredConversations = conversations.filter((conv) => {
         // In a real app, we'd fetch user details to search by name
@@ -19,15 +20,15 @@
         );
     });
 
-    function selectConversation(id) {
+    function selectConversation(id: string) {
         dispatch("select", { id });
     }
 
-    function formatTime(timestamp) {
+    function formatTime(timestamp: Timestamp) {
         if (!timestamp) return "";
         const date = timestamp.toDate();
         const now = new Date();
-        const diff = now - date;
+        const diff = now.getTime() - date.getTime();
 
         if (diff < 24 * 60 * 60 * 1000) {
             return date.toLocaleTimeString([], {
@@ -85,7 +86,7 @@
 
                     <p
                         class="text-sm text-gray-600 truncate {conv
-                            .unreadCount?.[$user?.uid] > 0
+                            .unreadCount?.[$user?.uid ?? ''] > 0
                             ? 'font-bold text-black'
                             : ''}"
                     >
@@ -96,11 +97,11 @@
                     </p>
                 </div>
 
-                {#if conv.unreadCount?.[$user?.uid] > 0}
+                {#if conv.unreadCount?.[$user?.uid ?? ""] > 0}
                     <div
                         class="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center flex-shrink-0 mt-1"
                     >
-                        {conv.unreadCount[$user.uid]}
+                        {conv.unreadCount[$user!.uid]}
                     </div>
                 {/if}
             </button>

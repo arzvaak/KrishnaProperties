@@ -1,14 +1,21 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
     import { db } from "$lib/firebase";
-    import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+    import {
+        collection,
+        query,
+        orderBy,
+        onSnapshot,
+        type QuerySnapshot,
+        type DocumentData,
+    } from "firebase/firestore";
     import ChatWindow from "$lib/components/Chat/ChatWindow.svelte";
     import ConversationList from "$lib/components/Chat/ConversationList.svelte";
     import { user } from "$lib/stores/auth";
 
-    let conversations = [];
-    let selectedConversationId = null;
-    let unsubscribe;
+    let conversations: any[] = [];
+    let selectedConversationId: string | null = null;
+    let unsubscribe: () => void;
 
     onMount(() => {
         // Admin sees all conversations
@@ -19,7 +26,7 @@
             orderBy("updatedAt", "desc"),
         );
 
-        unsubscribe = onSnapshot(q, (snapshot) => {
+        unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
             conversations = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
@@ -31,7 +38,7 @@
         };
     });
 
-    function handleSelect(event) {
+    function handleSelect(event: CustomEvent) {
         selectedConversationId = event.detail.id;
     }
 </script>

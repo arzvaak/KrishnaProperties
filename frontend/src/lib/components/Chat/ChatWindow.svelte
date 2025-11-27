@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { onMount, onDestroy, afterUpdate } from "svelte";
     import { db, storage } from "$lib/firebase";
     import {
@@ -11,29 +11,31 @@
         updateDoc,
         doc,
         increment,
+        type QuerySnapshot,
+        type DocumentData,
     } from "firebase/firestore";
     import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
     import {
         Send,
         Paperclip,
         X,
-        File,
+        File as FileIcon,
         Image as ImageIcon,
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
     import { user } from "$lib/stores/auth";
 
-    export let conversationId;
-    export let recipientId; // 'admin' or user uid
-    export let recipientName = "Support";
+    export let conversationId: string;
+    export let recipientId: string; // 'admin' or user uid
+    export let recipientName: string = "Support";
 
-    let messages = [];
-    let newMessage = "";
-    let fileInput;
-    let selectedFile = null;
-    let isUploading = false;
-    let unsubscribe;
-    let chatContainer;
+    let messages: any[] = [];
+    let newMessage: string = "";
+    let fileInput: HTMLInputElement;
+    let selectedFile: File | null = null;
+    let isUploading: boolean = false;
+    let unsubscribe: () => void;
+    let chatContainer: HTMLDivElement;
 
     $: if (conversationId) {
         subscribeToMessages();
@@ -47,7 +49,7 @@
             orderBy("timestamp", "asc"),
         );
 
-        unsubscribe = onSnapshot(q, (snapshot) => {
+        unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
             messages = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
@@ -123,13 +125,18 @@
             isUploading = false;
         } catch (error) {
             console.error("Error sending message:", error);
-            toast.error(error.message);
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("An unknown error occurred");
+            }
             isUploading = false;
         }
     }
 
-    function handleFileSelect(e) {
-        const file = e.target.files[0];
+    function handleFileSelect(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
                 toast.error("File size must be less than 5MB");
@@ -204,7 +211,7 @@
                                         rel="noopener noreferrer"
                                         class="flex items-center gap-2 bg-black/10 p-2 rounded hover:bg-black/20 transition-colors"
                                     >
-                                        <File size={16} />
+                                        <FileIcon size={16} />
                                         <span class="text-sm truncate"
                                             >{attachment.name}</span
                                         >
