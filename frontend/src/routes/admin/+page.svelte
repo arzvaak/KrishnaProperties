@@ -88,17 +88,20 @@
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        class="hover:bg-muted/50 transition-colors cursor-pointer"
+        onclick={() => (window.location.href = "/admin/leads")}
+      >
         <CardHeader
           class="flex flex-row items-center justify-between space-y-0 pb-2"
         >
-          <CardTitle class="text-sm font-medium">Active Users</CardTitle>
+          <CardTitle class="text-sm font-medium">Leads & Requests</CardTitle>
           <Users class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">--</div>
+          <div class="text-2xl font-bold">Manage</div>
           <p class="text-xs text-muted-foreground">
-            Real-time tracking coming soon
+            View appointments & inquiries
           </p>
         </CardContent>
       </Card>

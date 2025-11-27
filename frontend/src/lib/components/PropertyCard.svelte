@@ -12,6 +12,9 @@
   import { toast } from "svelte-sonner";
 
   export let property: any;
+  export let adminMode = false;
+  export let onDelete: ((id: string) => void) | undefined = undefined;
+
   let isFavorite = false; // In a real app, check this against user's favorites list on mount
 
   async function toggleFavorite(e: Event) {
@@ -49,9 +52,20 @@
       toast.error(error.message);
     }
   }
+
+  function handleDelete(e: Event) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete) onDelete(property.id);
+  }
 </script>
 
-<a href="/properties/{property.id}" class="block group h-full">
+<a
+  href={adminMode
+    ? `/admin/properties/${property.id}/edit`
+    : `/properties/${property.id}`}
+  class="block group h-full"
+>
   <Card
     class="h-full relative overflow-hidden border-border/50 shadow-lg hover:shadow-2xl transition-all duration-500 bg-card/80 backdrop-blur-sm hover:-translate-y-2"
   >
@@ -75,26 +89,48 @@
         </Badge>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        class="absolute top-3 right-3 z-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-500 transition-all duration-300"
-        onclick={toggleFavorite}
-      >
-        <Heart
-          class="h-5 w-5 {isFavorite ? 'fill-red-500 text-red-500' : ''}"
-        />
-      </Button>
-
-      <div
-        class="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
-      >
-        <span
-          class="inline-flex items-center justify-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-lg"
+      {#if !adminMode}
+        <Button
+          variant="ghost"
+          size="icon"
+          class="absolute top-3 right-3 z-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-500 transition-all duration-300"
+          onclick={toggleFavorite}
         >
-          View Details
-        </span>
-      </div>
+          <Heart
+            class="h-5 w-5 {isFavorite ? 'fill-red-500 text-red-500' : ''}"
+          />
+        </Button>
+
+        <div
+          class="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
+        >
+          <span
+            class="inline-flex items-center justify-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-lg"
+          >
+            View Details
+          </span>
+        </div>
+      {:else}
+        <div class="absolute top-3 right-3 z-10 flex gap-2">
+          <Button
+            variant="destructive"
+            size="sm"
+            class="h-8 px-3 shadow-lg"
+            onclick={handleDelete}
+          >
+            Delete
+          </Button>
+        </div>
+        <div
+          class="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
+        >
+          <span
+            class="inline-flex items-center justify-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-lg"
+          >
+            Edit Property
+          </span>
+        </div>
+      {/if}
     </div>
 
     <CardContent class="p-5">

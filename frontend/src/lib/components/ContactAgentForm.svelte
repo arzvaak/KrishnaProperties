@@ -30,14 +30,16 @@
 
     async function handleContact() {
         try {
-            await fetch("http://127.0.0.1:5000/api/analytics/track", {
+            await fetch("http://127.0.0.1:5000/api/inquiries", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    type: "contact",
+                    type: "property",
                     property_id: propertyId,
+                    property_title: propertyTitle,
                     user_id: $user?.uid,
-                    metadata: { message },
+                    message: message,
+                    email: $user?.email, // Assuming user email is available or handled by backend if logged in
                 }),
             });
             contactSent = true;

@@ -49,13 +49,18 @@ def create_appointment():
         
         # Send Email Notification
         try:
+            from utils.email_service import notify_appointment_confirmation, notify_admin_new_lead
+            
+            # Notify Admin
+            notify_admin_new_lead('Appointment', appointment_data)
+
+            # Notify User
             user = auth.get_user(user_id)
             if user.email:
                 # Fetch property title for the email
                 prop_doc = db.collection('properties').document(property_id).get()
                 prop_title = prop_doc.to_dict().get('title', 'Property') if prop_doc.exists else 'Property'
                 
-                from utils.email_service import notify_appointment_confirmation
                 notify_appointment_confirmation(user.email, prop_title, date, time)
         except Exception as e:
             print(f"Failed to send email: {e}")
@@ -69,6 +74,32 @@ def get_user_appointments(user_id):
     try:
         docs = db.collection('appointments')\
             .where('user_id', '==', user_id)\
+            .order_by('created_at', direction=firestore.Query.DESCENDING)\
+            .stream()
+            
+        appointments = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            
+            # Fetch property details for context
+            if data.get('property_id'):
+                p_doc = db.collection('properties').document(data['property_id']).get()
+                if p_doc.exists:
+                    p_data = p_doc.to_dict()
+                    data['property_title'] = p_data.get('title', 'Unknown Property')
+                    data['property_image'] = p_data.get('images', [])[0] if p_data.get('images') else p_data.get('imageUrl')
+            
+            appointments.append(data)
+            
+        return jsonify(appointments), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@appointments_bp.route('/api/admin/appointments', methods=['GET'])
+def get_all_appointments():
+    try:
+        docs = db.collection('appointments')\
             .order_by('created_at', direction=firestore.Query.DESCENDING)\
             .stream()
             

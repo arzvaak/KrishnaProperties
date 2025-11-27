@@ -22,13 +22,16 @@
     async function handleSubmit() {
         loading = true;
         try {
-            // 1. Track the contact event
-            await fetch("http://127.0.0.1:5000/api/analytics/track", {
+            // 1. Send inquiry to backend
+            await fetch("http://127.0.0.1:5000/api/inquiries", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    type: "contact",
-                    metadata: { name, email, subject, message },
+                    type: "general",
+                    name,
+                    email,
+                    subject,
+                    message,
                 }),
             });
 
