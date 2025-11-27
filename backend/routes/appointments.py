@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
-from firebase_admin import firestore
+from firebase_admin import firestore, auth
 from datetime import datetime
 
 appointments_bp = Blueprint('appointments', __name__)
@@ -47,6 +47,19 @@ def create_appointment():
         
         db.collection('appointments').add(appointment_data)
         
+        # Send Email Notification
+        try:
+            user = auth.get_user(user_id)
+            if user.email:
+                # Fetch property title for the email
+                prop_doc = db.collection('properties').document(property_id).get()
+                prop_title = prop_doc.to_dict().get('title', 'Property') if prop_doc.exists else 'Property'
+                
+                from utils.email_service import notify_appointment_confirmation
+                notify_appointment_confirmation(user.email, prop_title, date, time)
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+
         return jsonify({"message": "Appointment request sent successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500

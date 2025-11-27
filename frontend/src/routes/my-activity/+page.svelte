@@ -9,6 +9,7 @@
 
     let inquiries: any[] = [];
     let appointments: any[] = [];
+    let requests: any[] = [];
     let loading = true;
 
     onMount(() => {
@@ -17,6 +18,7 @@
                 await Promise.all([
                     fetchInquiries(u.uid),
                     fetchAppointments(u.uid),
+                    fetchRequests(u.uid),
                 ]);
                 loading = false;
             }
@@ -44,15 +46,27 @@
             console.error(e);
         }
     }
+
+    async function fetchRequests(uid: string) {
+        try {
+            const res = await fetch(
+                `http://127.0.0.1:5000/api/users/${uid}/requests`,
+            );
+            if (res.ok) requests = await res.json();
+        } catch (e) {
+            console.error(e);
+        }
+    }
 </script>
 
 <div class="container py-10">
     <h1 class="text-3xl font-bold mb-8">My Activity</h1>
 
     <Tabs.Root value="appointments" class="w-full">
-        <Tabs.List class="grid w-full grid-cols-2 max-w-[400px] mb-8">
+        <Tabs.List class="grid w-full grid-cols-3 max-w-[600px] mb-8">
             <Tabs.Trigger value="appointments">Appointments</Tabs.Trigger>
             <Tabs.Trigger value="inquiries">Inquiries</Tabs.Trigger>
+            <Tabs.Trigger value="requests">Requests</Tabs.Trigger>
         </Tabs.List>
 
         <Tabs.Content value="appointments">
@@ -190,6 +204,76 @@
                             </CardContent>
                         </Card>
                     {/each}
+                </div>
+            {/if}
+        </Tabs.Content>
+
+        <Tabs.Content value="requests">
+            {#if loading}
+                <p>Loading...</p>
+            {:else if requests.length === 0}
+                <div class="text-center py-12 border rounded-lg bg-muted/10">
+                    <MessageSquare
+                        class="w-12 h-12 mx-auto text-muted-foreground mb-4"
+                    />
+                    <h3 class="text-lg font-medium">No active requests</h3>
+                    <p class="text-muted-foreground">
+                        Tell us what you're looking for and we'll notify you.
+                    </p>
+                    <Button href="/requests" class="mt-4">Create Request</Button
+                    >
+                </div>
+            {:else}
+                <div class="grid gap-4">
+                    {#each requests as req}
+                        <Card>
+                            <CardContent class="p-6">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-semibold text-lg mb-2">
+                                            Property Request
+                                        </h3>
+                                        <div
+                                            class="space-y-1 text-sm text-muted-foreground"
+                                        >
+                                            <p>
+                                                <strong>Location:</strong>
+                                                {req.criteria.location || "Any"}
+                                            </p>
+                                            <p>
+                                                <strong>Type:</strong>
+                                                {req.criteria.type === "any"
+                                                    ? "Any Type"
+                                                    : req.criteria.type}
+                                            </p>
+                                            <p>
+                                                <strong>Budget:</strong> ₹{req
+                                                    .criteria.minPrice} - ₹{req
+                                                    .criteria.maxPrice}
+                                            </p>
+                                            <p>
+                                                <strong>Bedrooms:</strong>
+                                                {req.criteria.bedrooms
+                                                    ? `${req.criteria.bedrooms}+ BHK`
+                                                    : "Any"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline">Active</Badge>
+                                </div>
+                                <div class="mt-4 text-xs text-muted-foreground">
+                                    Created on {new Date(
+                                        req.created_at,
+                                    ).toLocaleDateString()}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    {/each}
+                    <div class="text-center mt-4">
+                        <Button href="/requests" variant="outline"
+                            >Create Another Request</Button
+                        >
+                    </div>
                 </div>
             {/if}
         </Tabs.Content>

@@ -4,40 +4,40 @@
   import { user } from "$lib/stores/auth";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
-  import { Card, CardContent } from "$lib/components/ui/card";
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+  } from "$lib/components/ui/card";
+  import { Separator } from "$lib/components/ui/separator";
   import {
     MapPin,
     Bed,
     Bath,
-    Square,
-    Phone,
-    Mail,
-    ChevronLeft,
-    ChevronRight,
+    Maximize,
     Heart,
     Share2,
     Printer,
     Copy,
     Facebook,
     Twitter,
-    Calendar as CalendarIcon,
+    Mail,
   } from "lucide-svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { toast } from "svelte-sonner";
-  import emblaCarouselSvelte from "embla-carousel-svelte";
-  import Autoplay from "embla-carousel-autoplay";
   import Map from "$lib/components/Map.svelte";
+  import ImageGallery from "$lib/components/ImageGallery.svelte";
+  import ContactAgentForm from "$lib/components/ContactAgentForm.svelte";
+  import MortgageCalculator from "$lib/components/MortgageCalculator.svelte";
 
   let property: any = null;
   let similarProperties: any[] = [];
   let loading = true;
   let error: string | null = null;
   const id = $page.params.id;
-  let emblaApi: any;
 
-  let message = "";
-  let contactSent = false;
   let isFavorite = false;
   let isShareOpen = false;
 
@@ -116,99 +116,19 @@
 
   function getEmbedUrl(url: string) {
     if (!url) return null;
-
-    // YouTube
     const ytMatch = url.match(
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^#&?]*).*/,
     );
     if (ytMatch && ytMatch[1])
       return `https://www.youtube.com/embed/${ytMatch[1]}`;
-
-    // Vimeo
     const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
     if (vimeoMatch && vimeoMatch[1])
       return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-
     return null;
-  }
-
-  import { Calendar } from "$lib/components/ui/calendar";
-  import * as Popover from "$lib/components/ui/popover";
-  import { cn } from "$lib/utils";
-  import {
-    DateFormatter,
-    type DateValue,
-    getLocalTimeZone,
-  } from "@internationalized/date";
-
-  let date: DateValue | undefined = undefined;
-  let time = "10:00";
-  let isScheduleOpen = false;
-  let scheduling = false;
-  let selectedIndex = 0;
-
-  const df = new DateFormatter("en-US", {
-    dateStyle: "long",
-  });
-
-  async function handleContact() {
-    try {
-      await fetch("http://127.0.0.1:5000/api/analytics/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "contact",
-          property_id: id,
-          user_id: $user?.uid,
-          metadata: { message },
-        }),
-      });
-      contactSent = true;
-      toast.success("Message sent to team!");
-      message = "";
-    } catch (e) {
-      toast.error("Failed to send message");
-    }
-  }
-
-  async function handleSchedule() {
-    if (!$user) {
-      toast.error("Please login to schedule a viewing");
-      return;
-    }
-    if (!date) {
-      toast.error("Please select a date");
-      return;
-    }
-
-    scheduling = true;
-    try {
-      const res = await fetch("http://127.0.0.1:5000/api/appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: $user.uid,
-          property_id: id,
-          date: date.toString(),
-          time: time,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to schedule");
-
-      toast.success(data.message);
-      isScheduleOpen = false;
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      scheduling = false;
-    }
   }
 
   onMount(async () => {
     try {
-      // Track property view
       fetch("http://127.0.0.1:5000/api/analytics/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -220,7 +140,6 @@
         fetch(`http://127.0.0.1:5000/api/properties`),
       ]);
 
-      // Check if favorite
       user.subscribe(async (u) => {
         if (u) {
           try {
@@ -240,10 +159,8 @@
       if (!propResponse.ok) throw new Error("Failed to fetch property details");
       property = await propResponse.json();
 
-      // Save to recently viewed
       user.subscribe(async (u) => {
         if (u) {
-          // Logged in: Save to API
           try {
             await fetch(
               `http://127.0.0.1:5000/api/users/${u.uid}/recently-viewed`,
@@ -257,7 +174,6 @@
             console.error("Failed to save recently viewed to API", e);
           }
         } else {
-          // Guest: Save to localStorage
           const viewed = localStorage.getItem("recentlyViewed");
           let recentlyViewed = viewed ? JSON.parse(viewed) : [];
           recentlyViewed = recentlyViewed.filter(
@@ -283,7 +199,6 @@
       if (allPropsResponse.ok) {
         const data = await allPropsResponse.json();
         const allProps = data.properties || [];
-        // Filter out current property and take 3 random ones (or just next 3)
         similarProperties = allProps
           .filter((p: any) => p.id !== id)
           .slice(0, 3);
@@ -296,370 +211,239 @@
   });
 </script>
 
-<div class="container py-8">
+<div class="min-h-screen bg-background pb-20">
   {#if loading}
-    <div class="space-y-8">
-      <Skeleton class="h-[400px] w-full rounded-xl" />
-      <div class="space-y-4">
-        <Skeleton class="h-8 w-[300px]" />
-        <Skeleton class="h-4 w-full" />
-        <Skeleton class="h-4 w-full" />
+    <div class="container py-8 space-y-8">
+      <Skeleton class="h-[500px] w-full rounded-2xl" />
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-4">
+          <Skeleton class="h-12 w-3/4" />
+          <Skeleton class="h-6 w-1/2" />
+          <Skeleton class="h-40 w-full" />
+        </div>
+        <Skeleton class="h-[400px] w-full rounded-xl" />
       </div>
     </div>
   {:else if error}
-    <div class="text-center py-20 text-red-500">
-      <p>Error: {error}</p>
-      <Button variant="outline" class="mt-4" href="/properties"
-        >Back to Properties</Button
-      >
+    <div
+      class="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
+    >
+      <h2 class="text-2xl font-bold text-destructive mb-2">
+        Error Loading Property
+      </h2>
+      <p class="text-muted-foreground mb-6">{error}</p>
+      <Button variant="outline" href="/properties">Back to Properties</Button>
     </div>
   {:else if property}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Main Content -->
-      <div class="lg:col-span-2 space-y-8">
-        <!-- Image Carousel -->
-        <div class="relative group">
-          <div
-            class="overflow-hidden rounded-xl bg-muted"
-            use:emblaCarouselSvelte={{
-              options: { loop: true },
-              plugins: [Autoplay({ delay: 5000 })],
-            }}
-            onemblaInit={(event) => {
-              emblaApi = event.detail;
-              emblaApi.on("select", () => {
-                selectedIndex = emblaApi.selectedScrollSnap();
-              });
-            }}
-          >
-            <div class="flex">
-              {#if property.images && property.images.length > 0}
-                {#each property.images as image}
-                  <div class="flex-[0_0_100%] min-w-0 relative h-[500px]">
-                    <img
-                      src={image}
-                      alt={property.title}
-                      class="object-cover w-full h-full"
-                      onerror={(e) => {
-                        const img = e.currentTarget as HTMLImageElement;
-                        img.onerror = null;
-                        img.src =
-                          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-                      }}
-                    />
-                  </div>
-                {/each}
-              {:else}
-                <div class="flex-[0_0_100%] min-w-0 relative h-[500px]">
-                  <img
-                    src={property.imageUrl ||
-                      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
-                    alt={property.title}
-                    class="object-cover w-full h-full"
-                    onerror={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      img.onerror = null;
-                      img.src =
-                        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-                    }}
-                  />
-                </div>
-              {/if}
+    <!-- Hero / Gallery Section -->
+    <ImageGallery
+      images={property.images && property.images.length > 0
+        ? property.images
+        : [property.imageUrl]}
+      title={property.title}
+    />
 
-              <!-- Video Slide -->
-              {#if property.videoUrl}
-                <div
-                  class="flex-[0_0_100%] min-w-0 relative h-[500px] bg-black flex items-center justify-center"
-                >
-                  {#if property.videoType === "file" || !getEmbedUrl(property.videoUrl)}
-                    <video
-                      src={property.videoUrl}
-                      controls
-                      class="w-full h-full max-h-[500px]"
+    <div class="container -mt-20 relative z-30">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Info -->
+        <div class="lg:col-span-2 space-y-8">
+          <Card
+            class="border-none shadow-2xl overflow-hidden backdrop-blur-sm bg-card/95"
+          >
+            <CardContent class="p-8">
+              <div
+                class="flex flex-col md:flex-row justify-between items-start gap-4 mb-6"
+              >
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <Badge
+                      variant="secondary"
+                      class="bg-primary/10 text-primary hover:bg-primary/20 border-none"
                     >
-                      <track kind="captions" />
-                    </video>
-                  {:else}
-                    <iframe
-                      src={getEmbedUrl(property.videoUrl)}
-                      title="Property Video"
-                      class="w-full h-full"
-                      frameborder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen
-                    ></iframe>
-                  {/if}
+                      {property.type}
+                    </Badge>
+                    <Badge variant="outline" class="text-muted-foreground">
+                      ID: {property.id}
+                    </Badge>
+                  </div>
+                  <h1
+                    class="text-3xl md:text-4xl font-bold tracking-tight mb-2"
+                  >
+                    {property.title}
+                  </h1>
+                  <div class="flex items-center text-muted-foreground text-lg">
+                    <MapPin class="w-5 h-5 mr-2 text-primary" />
+                    {property.location}
+                  </div>
                 </div>
-              {/if}
-            </div>
-          </div>
+                <div class="text-right">
+                  <div class="text-3xl font-bold text-primary mb-2">
+                    ₹ {property.price}
+                  </div>
+                  <div class="flex gap-2 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={toggleFavorite}
+                      class="hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Heart
+                        class="w-5 h-5 {isFavorite
+                          ? 'fill-red-500 text-red-500'
+                          : ''}"
+                      />
+                    </Button>
+                    <Button variant="ghost" size="icon" onclick={handleShare}>
+                      <Share2 class="w-5 h-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={handlePrint}
+                      class="no-print"
+                    >
+                      <Printer class="w-5 h-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
 
-          <!-- Navigation Buttons -->
-          <button
-            class="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 text-white backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100"
-            onclick={() => emblaApi && emblaApi.scrollPrev()}
-          >
-            <ChevronLeft class="w-6 h-6" />
-          </button>
-          <button
-            class="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 text-white backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100"
-            onclick={() => emblaApi && emblaApi.scrollNext()}
-          >
-            <ChevronRight class="w-6 h-6" />
-          </button>
-        </div>
+              <Separator class="my-6" />
 
-        <!-- Thumbnails -->
-        {#if property.images && property.images.length > 0}
-          <div class="flex gap-2 overflow-x-auto pb-2">
-            {#each property.images as image, i}
-              <button
-                class="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all {i ===
-                selectedIndex
-                  ? 'border-primary ring-2 ring-primary/50'
-                  : 'border-transparent opacity-70 hover:opacity-100'}"
-                onclick={() => emblaApi && emblaApi.scrollTo(i)}
-              >
-                <img
-                  src={image}
-                  alt={`Thumbnail ${i + 1}`}
-                  class="object-cover w-full h-full"
-                />
-              </button>
-            {/each}
-            {#if property.videoUrl}
-              <button
-                class="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all {property
-                  .images.length === selectedIndex
-                  ? 'border-primary ring-2 ring-primary/50'
-                  : 'border-transparent opacity-70 hover:opacity-100'}"
-                onclick={() =>
-                  emblaApi && emblaApi.scrollTo(property.images.length)}
-              >
+              <div class="grid grid-cols-3 gap-4 md:gap-8">
                 <div
-                  class="w-full h-full bg-black flex items-center justify-center text-white"
+                  class="flex flex-col items-center p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors"
                 >
-                  <span class="text-xs">Video</span>
+                  <Bed class="w-8 h-8 mb-2 text-primary" />
+                  <span class="text-2xl font-bold">{property.bedrooms}</span>
+                  <span class="text-sm text-muted-foreground">Bedrooms</span>
                 </div>
-              </button>
-            {/if}
-          </div>
-        {/if}
+                <div
+                  class="flex flex-col items-center p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <Bath class="w-8 h-8 mb-2 text-primary" />
+                  <span class="text-2xl font-bold">{property.bathrooms}</span>
+                  <span class="text-sm text-muted-foreground">Bathrooms</span>
+                </div>
+                <div
+                  class="flex flex-col items-center p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <Maximize class="w-8 h-8 mb-2 text-primary" />
+                  <span class="text-2xl font-bold"
+                    >{property.sqft || property.area || "N/A"}</span
+                  >
+                  <span class="text-sm text-muted-foreground">Sq Ft</span>
+                </div>
+              </div>
 
-        <div>
-          <div class="flex justify-between items-start mb-2">
-            <h1 class="text-3xl font-bold">{property.title}</h1>
-            <div class="flex gap-2">
-              <Button variant="outline" size="icon" onclick={toggleFavorite}>
-                <Heart
-                  class="w-5 h-5 {isFavorite
-                    ? 'fill-red-500 text-red-500'
-                    : ''}"
-                />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onclick={handleShare}
-                class="no-print"
-              >
-                <Share2 class="w-5 h-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onclick={handlePrint}
-                class="no-print"
-              >
-                <Printer class="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-          <div class="flex items-center text-muted-foreground mb-4">
-            <MapPin class="w-5 h-5 mr-2" />
-            <span class="text-lg">{property.location}</span>
-          </div>
-          <p class="text-2xl font-bold text-primary mb-6">₹ {property.price}</p>
-
-          <div
-            class="grid grid-cols-3 gap-4 p-6 bg-card border rounded-lg mb-8"
-          >
-            <div class="flex flex-col items-center justify-center text-center">
-              <Bed class="w-6 h-6 mb-2 text-primary" />
-              <span class="font-bold">{property.bedrooms}</span>
-              <span class="text-xs text-muted-foreground">Bedrooms</span>
-            </div>
-            <div
-              class="flex flex-col items-center justify-center text-center border-x"
-            >
-              <Bath class="w-6 h-6 mb-2 text-primary" />
-              <span class="font-bold">{property.bathrooms}</span>
-              <span class="text-xs text-muted-foreground">Bathrooms</span>
-            </div>
-            <div class="flex flex-col items-center justify-center text-center">
-              <Square class="w-6 h-6 mb-2 text-primary" />
-              <span class="font-bold">{property.sqft || "N/A"}</span>
-              <span class="text-xs text-muted-foreground">Sq Ft</span>
-            </div>
-          </div>
-
-          <div class="prose max-w-none mb-8">
-            <h3 class="text-xl font-bold mb-4">Description</h3>
-            <p class="text-muted-foreground">
-              {property.description ||
-                "No description available for this property."}
-            </p>
-          </div>
+              <div class="mt-8">
+                <h3 class="text-xl font-bold mb-4">About this home</h3>
+                <p class="text-muted-foreground leading-relaxed text-lg">
+                  {property.description ||
+                    "Experience luxury living in this stunning property. Featuring modern amenities, spacious interiors, and a prime location, this home offers the perfect blend of comfort and style."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <!-- Map Section -->
-          <div class="h-[400px] rounded-xl overflow-hidden border">
-            <Map
-              lat={property.lat || 19.076}
-              lng={property.lng || 72.8777}
-              zoom={15}
+          <Card class="overflow-hidden border-none shadow-lg">
+            <CardHeader>
+              <CardTitle>Location</CardTitle>
+            </CardHeader>
+            <CardContent class="p-0 h-[400px]">
+              <Map
+                lat={property.lat || 19.076}
+                lng={property.lng || 72.8777}
+                zoom={15}
+              />
+            </CardContent>
+          </Card>
+
+          <!-- Video Section -->
+          {#if property.videoUrl}
+            <Card class="overflow-hidden border-none shadow-lg">
+              <CardHeader>
+                <CardTitle>Video Tour</CardTitle>
+              </CardHeader>
+              <CardContent class="p-0 aspect-video bg-black">
+                {#if property.videoType === "file" || !getEmbedUrl(property.videoUrl)}
+                  <video src={property.videoUrl} controls class="w-full h-full">
+                    <track kind="captions" />
+                  </video>
+                {:else}
+                  <iframe
+                    src={getEmbedUrl(property.videoUrl)}
+                    title="Property Video"
+                    class="w-full h-full"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                {/if}
+              </CardContent>
+            </Card>
+          {/if}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+          <div class="sticky top-24 space-y-6">
+            <ContactAgentForm
+              propertyId={property.id}
+              propertyTitle={property.title}
+            />
+
+            <MortgageCalculator
+              price={parseInt(property.price.replace(/[^0-9]/g, ""))}
             />
           </div>
         </div>
       </div>
 
-      <!-- Sidebar -->
-      <div class="space-y-6">
-        <Card>
-          <CardContent class="p-6 space-y-4">
-            <h3 class="font-bold text-lg">Contact Us</h3>
-            <p class="text-sm text-muted-foreground">
-              Interested in this property? Send us a message and we'll get back
-              to you shortly.
-            </p>
-            <div class="space-y-3">
-              {#if contactSent}
-                <div
-                  class="bg-green-50 text-green-700 p-4 rounded-lg text-sm text-center"
-                >
-                  Message sent successfully! The agent will contact you shortly.
-                </div>
-              {:else}
-                <textarea
-                  class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="I'm interested in this property..."
-                  bind:value={message}
-                ></textarea>
-                <Button
-                  class="w-full gap-2"
-                  onclick={handleContact}
-                  disabled={!message}
-                >
-                  <Mail class="w-4 h-4" /> Send Message
-                </Button>
-              {/if}
-              <Popover.Root bind:open={isScheduleOpen}>
-                <Popover.Trigger class="w-full">
-                  <Button variant="outline" class="w-full gap-2">
-                    <CalendarIcon class="w-4 h-4" /> Schedule Viewing
-                  </Button>
-                </Popover.Trigger>
-                <Popover.Content class="w-auto p-0" align="start">
-                  <div class="p-4 space-y-4">
-                    <div class="space-y-2">
-                      <h4 class="font-medium leading-none">Pick a date</h4>
-                      <Calendar
-                        bind:value={date}
-                        type="single"
-                        class="rounded-md border"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <h4 class="font-medium leading-none">Pick a time</h4>
-                      <select
-                        bind:value={time}
-                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <option value="10:00">10:00 AM</option>
-                        <option value="11:00">11:00 AM</option>
-                        <option value="12:00">12:00 PM</option>
-                        <option value="13:00">01:00 PM</option>
-                        <option value="14:00">02:00 PM</option>
-                        <option value="15:00">03:00 PM</option>
-                        <option value="16:00">04:00 PM</option>
-                        <option value="17:00">05:00 PM</option>
-                      </select>
-                    </div>
-                    <Button
-                      class="w-full"
-                      onclick={handleSchedule}
-                      disabled={scheduling}
-                    >
-                      {scheduling ? "Scheduling..." : "Confirm Booking"}
-                    </Button>
-                  </div>
-                </Popover.Content>
-              </Popover.Root>
-              <Button
-                variant="outline"
-                class="w-full gap-2"
-                href="tel:+919876543210"
-              >
-                <Phone class="w-4 h-4" /> Call Us
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent class="p-6">
-            <h3 class="font-bold text-lg mb-4">Mortgage Calculator</h3>
-            <p class="text-sm text-muted-foreground mb-4">
-              Estimated monthly payment based on 20% down payment and 8.5%
-              interest rate.
-            </p>
-            <div class="text-2xl font-bold text-primary">
-              ₹ {Math.round(
-                parseInt(property.price.replace(/[^0-9]/g, "")) * 0.0076,
-              )} / mo
-            </div>
-          </CardContent>
-        </Card>
-
-        {#if similarProperties.length > 0}
-          <div class="space-y-4">
-            <h3 class="font-bold text-lg">You Might Also Like</h3>
+      {#if similarProperties.length > 0}
+        <div class="mt-16 mb-8">
+          <h2 class="text-2xl font-bold mb-6">You Might Also Like</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             {#each similarProperties as prop}
               <a href="/properties/{prop.id}" class="block group">
-                <Card class="overflow-hidden hover:shadow-md transition-shadow">
-                  <div class="flex gap-3 p-3">
+                <Card
+                  class="overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300"
+                >
+                  <div class="aspect-[4/3] overflow-hidden relative">
+                    <img
+                      src={prop.imageUrl ||
+                        prop.images?.[0] ||
+                        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
+                      alt={prop.title}
+                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                     <div
-                      class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0"
+                      class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"
+                    ></div>
+                    <Badge
+                      class="absolute top-2 left-2 bg-white/90 text-black hover:bg-white"
                     >
-                      <img
-                        src={prop.imageUrl ||
-                          prop.images?.[0] ||
-                          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
-                        alt={prop.title}
-                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div class="flex flex-col justify-between py-1">
-                      <div>
-                        <h4
-                          class="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors"
-                        >
-                          {prop.title}
-                        </h4>
-                        <p class="text-xs text-muted-foreground mt-1">
-                          {prop.location}
-                        </p>
-                      </div>
-                      <p class="font-bold text-primary text-sm">
-                        ₹ {prop.price}
-                      </p>
-                    </div>
+                      {prop.type}
+                    </Badge>
                   </div>
+                  <CardContent class="p-4">
+                    <h4
+                      class="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors"
+                    >
+                      {prop.title}
+                    </h4>
+                    <p class="text-muted-foreground text-sm mb-2 line-clamp-1">
+                      {prop.location}
+                    </p>
+                    <p class="font-bold text-primary text-lg">₹ {prop.price}</p>
+                  </CardContent>
                 </Card>
               </a>
             {/each}
           </div>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -675,7 +459,7 @@
     <div class="grid grid-cols-2 gap-4 py-4">
       <Button
         variant="outline"
-        class="flex flex-col h-24 gap-2"
+        class="flex flex-col h-24 gap-2 hover:bg-green-50 hover:border-green-200"
         onclick={() => shareSocial("whatsapp")}
       >
         <span class="text-2xl">📱</span>
@@ -683,7 +467,7 @@
       </Button>
       <Button
         variant="outline"
-        class="flex flex-col h-24 gap-2"
+        class="flex flex-col h-24 gap-2 hover:bg-blue-50 hover:border-blue-200"
         onclick={() => shareSocial("facebook")}
       >
         <Facebook class="w-6 h-6 text-blue-600" />
@@ -691,7 +475,7 @@
       </Button>
       <Button
         variant="outline"
-        class="flex flex-col h-24 gap-2"
+        class="flex flex-col h-24 gap-2 hover:bg-sky-50 hover:border-sky-200"
         onclick={() => shareSocial("twitter")}
       >
         <Twitter class="w-6 h-6 text-sky-500" />
@@ -699,7 +483,7 @@
       </Button>
       <Button
         variant="outline"
-        class="flex flex-col h-24 gap-2"
+        class="flex flex-col h-24 gap-2 hover:bg-gray-50"
         onclick={() => shareSocial("email")}
       >
         <Mail class="w-6 h-6" />
@@ -728,18 +512,14 @@
     :global(footer) {
       display: none !important;
     }
-
     :global(body) {
       background: white;
     }
-
     .container {
       max-width: 100% !important;
       padding: 0 !important;
       margin: 0 !important;
     }
-
-    /* Hide carousel navigation */
     :global(.embla__button) {
       display: none !important;
     }
