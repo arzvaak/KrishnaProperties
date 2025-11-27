@@ -90,3 +90,29 @@ def get_user_appointments(user_id):
         return jsonify(appointments), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@appointments_bp.route('/api/admin/appointments', methods=['GET'])
+def get_all_appointments():
+    try:
+        docs = db.collection('appointments')\
+            .order_by('created_at', direction=firestore.Query.DESCENDING)\
+            .stream()
+            
+        appointments = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            
+            # Fetch property details for context
+            if data.get('property_id'):
+                p_doc = db.collection('properties').document(data['property_id']).get()
+                if p_doc.exists:
+                    p_data = p_doc.to_dict()
+                    data['property_title'] = p_data.get('title', 'Unknown Property')
+                    data['property_image'] = p_data.get('images', [])[0] if p_data.get('images') else p_data.get('imageUrl')
+            
+            appointments.append(data)
+            
+        return jsonify(appointments), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
