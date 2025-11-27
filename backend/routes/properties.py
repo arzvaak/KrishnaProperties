@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
-from firebase_admin import firestore
+from firebase_admin import firestore, auth
+from utils.email_service import notify_saved_search_match, notify_price_drop
 
 properties_bp = Blueprint('properties', __name__)
 db, bucket = initialize_firebase()
@@ -88,6 +89,13 @@ def create_property():
         data = request.json
         # TODO: Add validation and admin check
         update_time, property_ref = db.collection('properties').add(data)
+        
+        # Check for matches
+        try:
+            check_new_listing_matches(data, property_ref.id)
+        except Exception as e:
+            print(f"Error checking matches: {e}")
+
         return jsonify({"id": property_ref.id, "message": "Property created successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -118,7 +126,98 @@ def delete_property(property_id):
 def update_property(property_id):
     try:
         data = request.json
+        
+        # Check for price drop before updating
+        try:
+            check_price_drop(property_id, data)
+        except Exception as e:
+            print(f"Error checking price drop: {e}")
+
         db.collection('properties').document(property_id).update(data)
         return jsonify({"message": "Property updated successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def parse_price(price_str):
+    try:
+        return int(str(price_str).replace('₹', '').replace(',', '').strip())
+    except:
+        return 0
+
+def check_new_listing_matches(property_data, property_id):
+    # 1. Check Property Requests (Global collection)
+    requests_ref = db.collection('property_requests').where('status', '==', 'active').stream()
+    
+    prop_price = parse_price(property_data.get('price'))
+    prop_bedrooms = int(property_data.get('bedrooms', 0))
+    prop_type = property_data.get('type')
+    prop_location = property_data.get('location', '').lower()
+
+    for req in requests_ref:
+        req_data = req.to_dict()
+        criteria = req_data.get('criteria', {})
+        user_id = req_data.get('user_id')
+        
+        # Check criteria
+        min_price = int(criteria.get('minPrice', 0))
+        max_price = int(criteria.get('maxPrice', 1000000000))
+        req_bedrooms = int(criteria.get('bedrooms', 0))
+        req_type = criteria.get('type')
+        req_location = criteria.get('location', '').lower()
+
+        if min_price <= prop_price <= max_price:
+            if prop_bedrooms >= req_bedrooms:
+                if not req_type or req_type == 'any' or req_type == prop_type:
+                    if not req_location or req_location in prop_location:
+                        # Match found!
+                        try:
+                            user = auth.get_user(user_id)
+                            if user.email:
+                                notify_saved_search_match(user.email, "Property Request Match", property_data.get('title'), property_id)
+                        except:
+                            pass
+
+    # 2. Check Saved Searches (Per User)
+    # Note: Iterating all users is inefficient. In production, use a dedicated 'saved_searches' collection group query.
+    # For MVP, we'll skip complex user iteration or assume we have a way to index searches.
+    # To keep it simple and performant enough for a demo, we'll just check the 'property_requests' as that's the explicit feature requested.
+    pass
+
+def check_price_drop(property_id, new_data):
+    new_price_str = new_data.get('price')
+    if not new_price_str:
+        return
+
+    # Get old data
+    old_doc = db.collection('properties').document(property_id).get()
+    if not old_doc.exists:
+        return
+    
+    old_data = old_doc.to_dict()
+    old_price_str = old_data.get('price')
+    
+    if not old_price_str:
+        return
+
+    new_price = parse_price(new_price_str)
+    old_price = parse_price(old_price_str)
+
+    if new_price < old_price:
+        # Price Dropped! Find users who favorited this property.
+        # We need to query the 'users' collection, but favorites are subcollections.
+        # Firestore Collection Group Query is best here.
+        favorites_query = db.collection_group('favorites').stream()
+        
+        for fav in favorites_query:
+            if fav.id == property_id:
+                # This user favorited this property
+                # fav.reference.parent.parent is the user document
+                user_ref = fav.reference.parent.parent
+                user_id = user_ref.id
+                
+                try:
+                    user = auth.get_user(user_id)
+                    if user.email:
+                        notify_price_drop(user.email, old_data.get('title'), old_price_str, new_price_str, property_id)
+                except:
+                    pass

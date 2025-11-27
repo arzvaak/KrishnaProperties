@@ -1,38 +1,30 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
-  import PropertyCard from "$lib/components/PropertyCard.svelte";
-  import emblaCarouselSvelte from "embla-carousel-svelte";
-  import Autoplay from "embla-carousel-autoplay";
-  import { reveal } from "$lib/actions/reveal";
+  import { Input } from "$lib/components/ui/input";
   import {
-    ArrowRight,
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+  } from "$lib/components/ui/card";
+  import { Badge } from "$lib/components/ui/badge";
+  import { Separator } from "$lib/components/ui/separator";
+  import { reveal } from "$lib/actions/reveal";
+  import FeaturedCollection from "$lib/components/FeaturedCollection.svelte";
+  import {
     CheckCircle2,
-    Star,
     Users,
     Home,
     TrendingUp,
-    ChevronLeft,
-    ChevronRight,
+    Search,
+    Sparkles,
+    Quote,
   } from "lucide-svelte";
-  import { Skeleton } from "$lib/components/ui/skeleton";
 
   let properties: any[] = [];
   let featuredProperties: any[] = [];
   let loading = true;
-  let emblaApi: any;
-
-  function onInit(event: CustomEvent) {
-    emblaApi = event.detail;
-  }
-
-  function scrollPrev() {
-    if (emblaApi) emblaApi.scrollPrev();
-  }
-
-  function scrollNext() {
-    if (emblaApi) emblaApi.scrollNext();
-  }
 
   onMount(async () => {
     try {
@@ -47,8 +39,7 @@
       if (response.ok) {
         const data = await response.json();
         properties = data.properties || [];
-        // Take first 5 as featured for the carousel
-        featuredProperties = properties.slice(0, 5);
+        featuredProperties = properties.slice(0, 3); // Top 3 for featured
       }
     } catch (error) {
       console.error("Failed to fetch properties:", error);
@@ -58,255 +49,222 @@
   });
 </script>
 
-<div class="flex flex-col min-h-screen">
-  <!-- Hero Section with Carousel -->
-  <section class="relative h-[700px] bg-black group">
-    {#if loading}
-      <Skeleton class="w-full h-full" />
-    {:else if featuredProperties.length > 0}
-      <div
-        class="overflow-hidden h-full"
-        use:emblaCarouselSvelte={{
-          options: { loop: true },
-          plugins: [Autoplay({ delay: 5000 })],
-        }}
-        onemblaInit={onInit}
-      >
-        <div class="flex h-full">
-          {#each featuredProperties as property}
-            <div class="flex-[0_0_100%] min-w-0 relative h-full">
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
-              ></div>
-              <img
-                src={property.imageUrl ||
-                  property.images?.[0] ||
-                  "https://images.unsplash.com/photo-1600596542815-27b88e35eabd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80"}
-                alt={property.title}
-                class="object-cover w-full h-full transform transition-transform duration-[10s] hover:scale-105"
-                onerror={(e) => {
-                  const img = e.currentTarget as HTMLImageElement;
-                  img.onerror = null; // Prevent infinite loop
-                  img.src =
-                    "https://images.unsplash.com/photo-1600596542815-27b88e35eabd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80";
-                }}
-              />
-              <div
-                class="absolute inset-0 z-20 flex items-center justify-center text-center text-white p-4"
-              >
-                <div class="max-w-4xl space-y-6">
-                  <h1
-                    class="text-5xl md:text-7xl font-bold tracking-tighter animate-in fade-in slide-in-from-bottom-4 duration-1000 drop-shadow-lg"
-                  >
-                    {property.title}
-                  </h1>
-                  <p
-                    class="text-2xl md:text-3xl text-gray-200 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 font-light drop-shadow-md"
-                  >
-                    {property.location} •
-                    <span class="font-semibold">₹ {property.price}</span>
-                  </p>
-                  <div
-                    class="flex gap-4 justify-center animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300 pt-4"
-                  >
-                    <Button
-                      size="lg"
-                      class="text-lg px-8 py-6 rounded-full shadow-lg hover:scale-105 transition-transform"
-                      href="/properties/{property.id}">View Details</Button
-                    >
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      class="text-lg px-8 py-6 rounded-full bg-white/10 backdrop-blur-sm border-white/50 text-white hover:bg-white/20 hover:text-white hover:border-white transition-all hover:scale-105"
-                      href="/contact">Contact Agent</Button
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-
-      <!-- Carousel Navigation -->
-      <button
-        class="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/30 text-white backdrop-blur-md border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
-        onclick={scrollPrev}
-      >
-        <ChevronLeft class="w-8 h-8" />
-      </button>
-      <button
-        class="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/30 text-white backdrop-blur-md border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
-        onclick={scrollNext}
-      >
-        <ChevronRight class="w-8 h-8" />
-      </button>
-    {:else}
-      <!-- Fallback if no properties -->
-      <div
-        class="relative h-full flex items-center justify-center text-center text-white"
-      >
-        <div class="absolute inset-0 bg-black/50 z-10"></div>
-        <div
-          class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1600596542815-27b88e35eabd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80')] bg-cover bg-center"
-        ></div>
-        <div class="relative z-20 container px-4">
-          <h1 class="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-            Find Your Dream Home
-          </h1>
-          <Button size="lg" class="text-lg px-8" href="/properties"
-            >Browse Properties</Button
-          >
-        </div>
-      </div>
-    {/if}
-  </section>
-
-  <!-- Stats Section -->
+<div class="flex flex-col min-h-screen bg-background">
+  <!-- Hero Section -->
   <section
-    class="py-16 bg-primary text-primary-foreground relative overflow-hidden"
+    class="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden"
   >
-    <div
-      class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"
-    ></div>
-    <div class="container px-4 relative z-10" use:reveal>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        <div
-          class="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors"
+    <!-- Background Image with Overlay -->
+    <div class="absolute inset-0 z-0">
+      <img
+        src="/images/hero-bg.png"
+        alt="Luxury Villa"
+        class="w-full h-full object-cover"
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-background"
+      ></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="container relative z-10 px-4 text-center" use:reveal>
+      <Badge
+        variant="outline"
+        class="mb-6 text-white border-white/30 backdrop-blur-md px-4 py-1 text-sm uppercase tracking-widest"
+      >
+        Exclusive Real Estate
+      </Badge>
+      <h1
+        class="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight leading-tight"
+      >
+        Discover Your <br />
+        <span
+          class="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500"
         >
-          <div class="text-5xl font-bold mb-2">100+</div>
-          <div class="text-primary-foreground/80 font-medium">
+          Dream Sanctuary
+        </span>
+      </h1>
+      <p
+        class="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto font-light leading-relaxed"
+      >
+        Curated properties for those who seek the extraordinary.
+      </p>
+
+      <!-- Search Bar -->
+      <div
+        class="max-w-4xl mx-auto bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-full flex flex-col md:flex-row gap-2 shadow-2xl"
+      >
+        <div class="flex-1 relative">
+          <Search
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5"
+          />
+          <Input
+            type="text"
+            placeholder="Search by location, property type..."
+            class="pl-12 h-14 bg-transparent border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-lg rounded-full"
+          />
+        </div>
+        <Button
+          size="lg"
+          class="h-14 px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-medium shadow-lg"
+        >
+          Search Properties
+        </Button>
+      </div>
+
+      <!-- Stats -->
+      <div
+        class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-white/90"
+      >
+        <div class="text-center">
+          <div class="text-3xl font-bold mb-1">150+</div>
+          <div class="text-sm uppercase tracking-wider opacity-70">
             Premium Listings
           </div>
         </div>
-        <div
-          class="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          <div class="text-5xl font-bold mb-2">50+</div>
-          <div class="text-primary-foreground/80 font-medium">
-            Expert Agents
-          </div>
-        </div>
-        <div
-          class="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          <div class="text-5xl font-bold mb-2">10k+</div>
-          <div class="text-primary-foreground/80 font-medium">
+        <div class="text-center">
+          <div class="text-3xl font-bold mb-1">2k+</div>
+          <div class="text-sm uppercase tracking-wider opacity-70">
             Happy Clients
           </div>
         </div>
-        <div
-          class="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          <div class="text-5xl font-bold mb-2">24/7</div>
-          <div class="text-primary-foreground/80 font-medium">Support</div>
+        <div class="text-center">
+          <div class="text-3xl font-bold mb-1">50+</div>
+          <div class="text-sm uppercase tracking-wider opacity-70">Cities</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold mb-1">24/7</div>
+          <div class="text-sm uppercase tracking-wider opacity-70">Support</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Recent Listings Section -->
-  <section class="py-24 bg-gradient-to-b from-background to-muted/30">
-    <div class="container px-4">
-      <div class="flex justify-between items-end mb-12" use:reveal>
-        <div>
-          <h2 class="text-4xl font-bold mb-4 tracking-tight">
-            Recent Listings
+  <!-- Featured Collections -->
+  <FeaturedCollection properties={featuredProperties} {loading} />
+
+  <!-- Dream Home Finder (Dark Section) -->
+  <section class="relative py-32 overflow-hidden">
+    <div class="absolute inset-0">
+      <img
+        src="/images/interior-bg.png"
+        alt="Interior"
+        class="w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-primary/90 mix-blend-multiply"></div>
+    </div>
+
+    <div class="container relative z-10 px-4">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div use:reveal>
+          <div
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-amber-300 text-sm font-medium mb-6"
+          >
+            <Sparkles class="w-4 h-4" />
+            <span>Concierge Service</span>
+          </div>
+          <h2
+            class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
+          >
+            Can't find exactly <br /> what you need?
           </h2>
-          <p class="text-xl text-muted-foreground">
-            Freshly added properties in prime locations
+          <p class="text-xl text-gray-300 mb-8 leading-relaxed">
+            Our "Dream Home Finder" service is designed for discerning clients.
+            Tell us your requirements, and our dedicated agents will scour the
+            market—including off-market listings—to find your perfect match.
           </p>
+          <Button
+            size="lg"
+            class="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-8 h-14 rounded-full"
+            href="/requests"
+          >
+            Start Your Search
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          href="/properties"
-          class="hidden md:inline-flex gap-2 text-lg hover:bg-transparent hover:text-primary transition-colors"
-        >
-          View All <ArrowRight class="w-5 h-5" />
-        </Button>
-      </div>
 
-      {#if loading}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {#each Array(3) as _}
-            <Skeleton class="h-[450px] w-full rounded-2xl" />
-          {/each}
+        <div class="grid gap-6" use:reveal={{ delay: 200 }}>
+          <Card class="bg-white/5 backdrop-blur-md border-white/10 text-white">
+            <CardContent class="p-6 flex items-start gap-4">
+              <div class="p-3 rounded-full bg-amber-500/20 text-amber-400">
+                <CheckCircle2 class="w-6 h-6" />
+              </div>
+              <div>
+                <h3 class="text-xl font-bold mb-2">Priority Access</h3>
+                <p class="text-gray-400">
+                  Be the first to know about new listings before they hit the
+                  public market.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card class="bg-white/5 backdrop-blur-md border-white/10 text-white">
+            <CardContent class="p-6 flex items-start gap-4">
+              <div class="p-3 rounded-full bg-amber-500/20 text-amber-400">
+                <Users class="w-6 h-6" />
+              </div>
+              <div>
+                <h3 class="text-xl font-bold mb-2">Dedicated Agent</h3>
+                <p class="text-gray-400">
+                  A personal real estate expert assigned specifically to your
+                  search.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      {:else}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {#each properties.slice(0, 6) as property, i}
-            <div use:reveal={{ threshold: 0.1 }}>
-              <PropertyCard {property} />
-            </div>
-          {/each}
-        </div>
-      {/if}
-
-      <div class="mt-12 text-center md:hidden">
-        <Button variant="outline" size="lg" class="w-full" href="/properties"
-          >View All Properties</Button
-        >
       </div>
     </div>
   </section>
 
   <!-- Why Choose Us -->
-  <section class="py-24 bg-muted/30 relative">
+  <section class="py-32 bg-muted/30">
     <div class="container px-4">
       <div class="text-center max-w-3xl mx-auto mb-20" use:reveal>
-        <h2 class="text-4xl font-bold mb-6 tracking-tight">
-          Why Choose Krishna Properties?
-        </h2>
+        <h2 class="text-4xl font-bold mb-6">Why Choose Krishna Properties</h2>
         <p class="text-xl text-muted-foreground">
-          We provide a seamless property buying experience with transparency,
-          trust, and unparalleled service.
+          Excellence in every detail of your real estate journey.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div
-          class="bg-background p-10 rounded-2xl shadow-sm border hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group"
-          use:reveal={{ threshold: 0.2 }}
-        >
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="text-center group" use:reveal={{ threshold: 0.1 }}>
           <div
-            class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:bg-primary group-hover:text-white transition-colors duration-300"
+            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
           >
-            <Home class="w-8 h-8" />
+            <Home class="w-8 h-8 text-primary" />
           </div>
-          <h3 class="font-bold text-2xl mb-4">Wide Property Range</h3>
-          <p class="text-muted-foreground text-lg leading-relaxed">
-            From luxury villas to cozy apartments, we have properties for every
-            budget and lifestyle.
+          <h3 class="text-2xl font-bold mb-4">Premium Portfolio</h3>
+          <p class="text-muted-foreground leading-relaxed">
+            Access to the most exclusive and high-end properties in the market.
           </p>
         </div>
         <div
-          class="bg-background p-10 rounded-2xl shadow-sm border hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group"
-          use:reveal={{ threshold: 0.2 }}
+          class="text-center group"
+          use:reveal={{ threshold: 0.1, delay: 100 }}
         >
           <div
-            class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:bg-primary group-hover:text-white transition-colors duration-300"
+            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
           >
-            <Users class="w-8 h-8" />
+            <TrendingUp class="w-8 h-8 text-primary" />
           </div>
-          <h3 class="font-bold text-2xl mb-4">Trusted Agents</h3>
-          <p class="text-muted-foreground text-lg leading-relaxed">
-            Our verified agents guide you through every step of the process with
-            honesty and integrity.
+          <h3 class="text-2xl font-bold mb-4">Market Insight</h3>
+          <p class="text-muted-foreground leading-relaxed">
+            Deep data-driven analysis to ensure you make the best investment
+            decisions.
           </p>
         </div>
         <div
-          class="bg-background p-10 rounded-2xl shadow-sm border hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group"
-          use:reveal={{ threshold: 0.2 }}
+          class="text-center group"
+          use:reveal={{ threshold: 0.1, delay: 200 }}
         >
           <div
-            class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:bg-primary group-hover:text-white transition-colors duration-300"
+            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
           >
-            <TrendingUp class="w-8 h-8" />
+            <Users class="w-8 h-8 text-primary" />
           </div>
-          <h3 class="font-bold text-2xl mb-4">Best Market Rates</h3>
-          <p class="text-muted-foreground text-lg leading-relaxed">
-            We ensure you get the best value for your investment with our deep
-            market expertise.
+          <h3 class="text-2xl font-bold mb-4">Personalized Care</h3>
+          <p class="text-muted-foreground leading-relaxed">
+            We treat every client's search as if it were our own.
           </p>
         </div>
       </div>
@@ -314,74 +272,53 @@
   </section>
 
   <!-- Testimonials -->
-  <section class="py-24 bg-background">
-    <div class="container px-4">
-      <h2
-        class="text-4xl font-bold mb-16 text-center tracking-tight"
-        use:reveal
-      >
-        What Our Clients Say
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {#each [1, 2, 3] as _, i}
-          <div
-            class="bg-muted/20 p-8 rounded-2xl border hover:border-primary/50 transition-colors"
-            use:reveal={{ threshold: 0.1 }}
-          >
-            <div class="flex gap-1 text-yellow-500 mb-6">
-              {#each Array(5) as _}<Star class="w-5 h-5 fill-current" />{/each}
-            </div>
-            <p
-              class="text-muted-foreground mb-8 text-lg italic leading-relaxed"
-            >
-              "Found my dream home within weeks! The team was incredibly helpful
-              and transparent throughout the process. Highly recommended!"
+  <section class="py-32 container px-4">
+    <h2 class="text-4xl font-bold text-center mb-20">Client Stories</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {#each [1, 2, 3] as i}
+        <Card class="bg-muted/30 border-none">
+          <CardContent class="p-8">
+            <Quote class="w-10 h-10 text-primary/20 mb-6" />
+            <p class="text-lg text-muted-foreground mb-8 italic">
+              "The level of service and attention to detail was outstanding.
+              They truly understood what we were looking for."
             </p>
             <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden ring-2 ring-primary/20"
-              >
+              <div class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
                 <img
                   src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Client${i}`}
-                  alt="User"
-                  class="w-full h-full object-cover"
+                  alt="Client"
                 />
               </div>
               <div>
-                <p class="font-bold text-base">Happy Client</p>
-                <p class="text-sm text-muted-foreground">Homeowner</p>
+                <div class="font-bold">Sarah Johnson</div>
+                <div class="text-sm text-muted-foreground">
+                  Luxury Villa Buyer
+                </div>
               </div>
             </div>
-          </div>
-        {/each}
-      </div>
+          </CardContent>
+        </Card>
+      {/each}
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <section
-    class="py-24 bg-primary text-primary-foreground text-center relative overflow-hidden"
-  >
-    <div
-      class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"
-    ></div>
-    <div class="container px-4 relative z-10" use:reveal>
-      <h2 class="text-4xl md:text-5xl font-bold mb-8 tracking-tight">
-        Ready to Find Your New Home?
+  <!-- CTA -->
+  <section class="py-32 bg-primary text-primary-foreground text-center">
+    <div class="container px-4" use:reveal>
+      <h2 class="text-4xl md:text-6xl font-bold mb-8">
+        Ready to elevate your lifestyle?
       </h2>
-      <p
-        class="text-2xl mb-10 text-primary-foreground/90 max-w-2xl mx-auto font-light"
-      >
-        Join thousands of satisfied customers who found their perfect property
-        with us.
+      <p class="text-xl text-primary-foreground/80 mb-12 max-w-2xl mx-auto">
+        Let us guide you home to the luxury you deserve.
       </p>
       <Button
         size="lg"
         variant="secondary"
-        class="text-xl px-10 py-8 rounded-full shadow-2xl hover:scale-105 transition-transform"
+        class="h-16 px-10 text-xl rounded-full"
         href="/contact"
       >
-        Get Started Today
+        Contact Us Today
       </Button>
     </div>
   </section>

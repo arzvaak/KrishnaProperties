@@ -26,6 +26,11 @@
         >Properties</a
       >
       <a
+        href="/requests"
+        class="text-sm font-medium hover:text-primary transition-colors"
+        >Dream Home</a
+      >
+      <a
         href="/about"
         class="text-sm font-medium hover:text-primary transition-colors"
         >About</a
@@ -52,9 +57,14 @@
             >Saved</a
           >
           <a
-            href="/account"
+            href="/my-activity"
             class="text-sm font-medium hover:text-primary transition-colors"
-            >Account</a
+            >My Activity</a
+          >
+          <a
+            href="/profile"
+            class="text-sm font-medium hover:text-primary transition-colors"
+            >Profile</a
           >
           <Button variant="outline" size="sm" onclick={handleLogout}
             >Logout</Button

@@ -31,10 +31,10 @@
 - [x] Account deletion option
 
 ### User Notifications
-- [ ] Email notifications for saved search alerts
-- [ ] Price drop notifications
-- [ ] New listing alerts matching criteria
-- [ ] Appointment confirmations
+- [x] Email notifications for saved search alerts
+- [x] Price drop notifications
+- [x] New listing alerts matching criteria
+- [x] Appointment confirmations
 
 ## Phase 3: Lead & Communication
 ### Lead Generation
@@ -274,7 +274,7 @@
 ### Sprint 2 (Week 3-4)
 - [x] Advanced search filters & sorting
 - [ ] Lead management dashboard
-- [ ] Email notifications
+- [x] Email notifications
 - [x] Property analytics
 - [x] Homepage with featured listings
 

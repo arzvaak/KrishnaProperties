@@ -6,6 +6,7 @@ from routes.properties import properties_bp
 from routes.users import users_bp
 from routes.analytics import analytics_bp
 from routes.appointments import appointments_bp
+from routes.requests import requests_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +15,7 @@ app.register_blueprint(properties_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(appointments_bp)
+app.register_blueprint(requests_bp)
 
 # Initialize Firebase
 try:

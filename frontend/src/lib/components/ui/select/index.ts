@@ -21,7 +21,6 @@ export {
 	Separator,
 	ScrollDownButton,
 	ScrollUpButton,
-	SelectPrimitive,
 	//
 	Root as Select,
 	Group as SelectGroup,
@@ -32,5 +31,4 @@ export {
 	Separator as SelectSeparator,
 	ScrollDownButton as SelectScrollDownButton,
 	ScrollUpButton as SelectScrollUpButton,
-	SelectPrimitive as SelectValue,
 };
