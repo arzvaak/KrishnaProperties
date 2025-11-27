@@ -52,17 +52,17 @@
 <div class="flex flex-col min-h-screen bg-background">
   <!-- Hero Section -->
   <section
-    class="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden"
+    class="relative h-[70vh] min-h-[600px] flex items-center justify-center overflow-hidden"
   >
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
       <img
-        src="/images/hero-bg.png"
+        src="/images/hero-bg-v2.png"
         alt="Luxury Villa"
         class="w-full h-full object-cover"
       />
       <div
-        class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-background"
+        class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background/90"
       ></div>
     </div>
 
@@ -75,7 +75,7 @@
         Exclusive Real Estate
       </Badge>
       <h1
-        class="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight leading-tight"
+        class="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-tight"
       >
         Discover Your <br />
         <span
@@ -85,56 +85,76 @@
         </span>
       </h1>
       <p
-        class="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto font-light leading-relaxed"
+        class="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto font-light leading-relaxed"
       >
         Curated properties for those who seek the extraordinary.
       </p>
 
-      <!-- Search Bar -->
-      <div
-        class="max-w-4xl mx-auto bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-full flex flex-col md:flex-row gap-2 shadow-2xl"
-      >
-        <div class="flex-1 relative">
-          <Search
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5"
-          />
-          <Input
-            type="text"
-            placeholder="Search by location, property type..."
-            class="pl-12 h-14 bg-transparent border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-lg rounded-full"
-          />
-        </div>
-        <Button
-          size="lg"
-          class="h-14 px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-medium shadow-lg"
+      <!-- Search & Dream Home Finder -->
+      <div class="max-w-4xl mx-auto flex flex-col gap-4">
+        <!-- Search Bar -->
+        <div
+          class="bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-full flex flex-col md:flex-row gap-2 shadow-2xl"
         >
-          Search Properties
-        </Button>
+          <div class="flex-1 relative">
+            <Search
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5"
+            />
+            <Input
+              type="text"
+              placeholder="Search by location, property type..."
+              class="pl-12 h-12 bg-transparent border-none text-white placeholder:text-gray-300 focus-visible:ring-0 text-lg rounded-full"
+            />
+          </div>
+          <Button
+            size="lg"
+            class="h-12 px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-medium shadow-lg"
+          >
+            Search
+          </Button>
+        </div>
+
+        <!-- Dream Home CTA -->
+        <div
+          class="flex items-center justify-center gap-2 text-white/90 text-sm"
+        >
+          <span>Looking for something specific?</span>
+          <a
+            href="/requests"
+            class="flex items-center gap-1 text-amber-300 hover:text-amber-200 font-medium transition-colors group"
+          >
+            <Sparkles class="w-4 h-4" />
+            Try our Dream Home Finder
+            <TrendingUp
+              class="w-3 h-3 group-hover:translate-x-1 transition-transform"
+            />
+          </a>
+        </div>
       </div>
 
       <!-- Stats -->
       <div
-        class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-white/90"
+        class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-white/90"
       >
         <div class="text-center">
           <div class="text-3xl font-bold mb-1">150+</div>
-          <div class="text-sm uppercase tracking-wider opacity-70">
+          <div class="text-xs uppercase tracking-wider opacity-70">
             Premium Listings
           </div>
         </div>
         <div class="text-center">
           <div class="text-3xl font-bold mb-1">2k+</div>
-          <div class="text-sm uppercase tracking-wider opacity-70">
+          <div class="text-xs uppercase tracking-wider opacity-70">
             Happy Clients
           </div>
         </div>
         <div class="text-center">
           <div class="text-3xl font-bold mb-1">50+</div>
-          <div class="text-sm uppercase tracking-wider opacity-70">Cities</div>
+          <div class="text-xs uppercase tracking-wider opacity-70">Cities</div>
         </div>
         <div class="text-center">
           <div class="text-3xl font-bold mb-1">24/7</div>
-          <div class="text-sm uppercase tracking-wider opacity-70">Support</div>
+          <div class="text-xs uppercase tracking-wider opacity-70">Support</div>
         </div>
       </div>
     </div>

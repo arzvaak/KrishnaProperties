@@ -40,7 +40,7 @@
     }
 </script>
 
-<div class="flex flex-col h-full bg-white border-r border-gray-200 w-80">
+<div class="flex flex-col h-full bg-card border-r border-border w-80">
     <div class="p-4 border-b border-gray-200">
         <h2 class="text-xl font-bold mb-4">Messages</h2>
         <div class="relative">

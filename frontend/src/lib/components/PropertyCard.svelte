@@ -83,7 +83,7 @@
 
       <div class="absolute top-3 left-3 flex gap-2 z-10">
         <Badge
-          class="bg-white/90 text-black backdrop-blur-md hover:bg-white border-none shadow-sm"
+          class="bg-card/90 text-foreground backdrop-blur-md hover:bg-card border-none shadow-sm"
         >
           {property.type}
         </Badge>
@@ -93,7 +93,7 @@
         <Button
           variant="ghost"
           size="icon"
-          class="absolute top-3 right-3 z-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-500 transition-all duration-300"
+          class="absolute top-3 right-3 z-10 rounded-full bg-card/20 backdrop-blur-md hover:bg-card text-white hover:text-destructive transition-all duration-300"
           onclick={toggleFavorite}
         >
           <Heart

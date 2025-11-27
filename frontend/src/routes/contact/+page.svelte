@@ -54,7 +54,7 @@
     }
 </script>
 
-<div class="container py-12">
+<div class="container py-12 pt-24">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <!-- Contact Info -->
         <div class="space-y-8">

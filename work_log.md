@@ -31,3 +31,12 @@
 | 2025-11-27 | 14:00 | **Admin Dashboard** | Created consolidated Leads Dashboard (`/admin/leads`) and added Grid/List view to Properties page. |
 | 2025-11-27 | 14:00 | **Email System** | Implemented Admin Alerts for new leads and Auto-Responders for users. |
 | 2025-11-27 | 14:00 | **Documentation** | Created `gemini_context.md` and updated `task.md`. |
+| 2025-11-27 | 16:40 | **Lead Features** | Implemented Lead Source Tracking and CSV Export functionality. |
+| 2025-11-27 | 17:00 | **UI/UX Polish** | Redesigned Profile (Sidebar), Chat (Split View), Homepage (Hero size/CTA), and fixed Lead Pipeline layout. Added global background and accents. |
+| 2025-11-27 | 17:15 | **Visual Polish** | Implemented Dark Mode Navbar and Warm Cream Background based on user feedback. |
+| 2025-11-27 | 17:30 | **Layout Fixes** | Fixed "white space" issue by removing global padding. Updated Navbar to be transparent. Changed background to Cool Platinum. |
+| 2025-11-27 | 17:40 | **Visual Polish** | Updated global background to **Lavender Mist** (`#F2F0F7`) per user request for a "purpleish light" darker tone. |
+| 2025-11-27 | 17:50 | **Visual Polish** | Implemented **Purple Harmony** palette: Rich Lavender background, Deep Violet primary, and Vibrant Amethyst accents. |
+| 2025-11-27 | 18:00 | **Visual Polish** | Refined visual harmony: Darkened text for readability and tinted cards to blend with background. |
+| 2025-11-27 | 18:15 | **Visual Polish** | **Theme Unification**: Removed hardcoded white backgrounds from Admin, Chat, and Property components, replacing them with theme-aware `bg-card` styles. |
+| 2025-11-27 | 18:30 | **Visual Polish** | Implemented **High Contrast Theme**: Muted Lavender Gray background, distinct Pale Lavender cards, and Deep Charcoal text for maximum readability. |
