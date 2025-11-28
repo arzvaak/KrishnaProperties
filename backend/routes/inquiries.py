@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
 from firebase_admin import firestore
 from datetime import datetime
+from routes.auth import verify_token, verify_admin
 
 inquiries_bp = Blueprint('inquiries', __name__)
 db, _ = initialize_firebase()
@@ -43,6 +44,7 @@ def create_inquiry():
         return jsonify({"error": str(e)}), 500
 
 @inquiries_bp.route('/api/admin/inquiries', methods=['GET'])
+@verify_admin
 def get_all_inquiries():
     try:
         docs = db.collection('inquiries')\
@@ -60,6 +62,7 @@ def get_all_inquiries():
         return jsonify({"error": str(e)}), 500
 
 @inquiries_bp.route('/api/users/<user_id>/inquiries', methods=['GET'])
+@verify_token
 def get_user_inquiries(user_id):
     try:
         docs = db.collection('inquiries')\

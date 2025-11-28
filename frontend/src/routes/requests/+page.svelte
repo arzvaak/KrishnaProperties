@@ -26,11 +26,12 @@
         ArrowRight,
     } from "lucide-svelte";
     import { reveal } from "$lib/actions/reveal";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     let loading = false;
 
     // Form State
-    let transactionType = "buy";
     let propertyType = "any";
     let location = "";
     let minPrice = "";
@@ -50,7 +51,6 @@
         loading = true;
         try {
             const criteria = {
-                transactionType,
                 type: propertyType,
                 location,
                 minPrice: minPrice ? parseInt(minPrice) : 0,
@@ -61,7 +61,7 @@
                 requirements,
             };
 
-            const res = await fetch("http://127.0.0.1:5000/api/requests", {
+            const res = await fetchWithAuth(`${API_BASE_URL}/api/requests`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -268,27 +268,10 @@
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="p-8 space-y-8">
-                        <!-- Transaction Type -->
-                        <div class="flex justify-center pb-6 border-b">
-                            <Tabs.Root
-                                value={transactionType}
-                                onValueChange={(v) => (transactionType = v)}
-                                class="w-full max-w-md"
-                            >
-                                <Tabs.List class="grid w-full grid-cols-2 h-12">
-                                    <Tabs.Trigger
-                                        value="buy"
-                                        class="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                                        >I want to Buy</Tabs.Trigger
-                                    >
-                                    <Tabs.Trigger
-                                        value="rent"
-                                        class="text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                                        >I want to Rent</Tabs.Trigger
-                                    >
-                                </Tabs.List>
-                            </Tabs.Root>
-                        </div>
+                        <!-- Transaction Type Removed -->
+                        <!-- <div class="flex justify-center pb-6 border-b">
+                             Tabs were here
+                        </div> -->
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Property Details -->
@@ -318,20 +301,24 @@
                                                 <Select.Item value="any"
                                                     >Any Type</Select.Item
                                                 >
-                                                <Select.Item value="apartment"
-                                                    >Apartment</Select.Item
+                                                <Select.Item
+                                                    value="Authority plots"
+                                                    >Authority plots</Select.Item
                                                 >
-                                                <Select.Item value="house"
-                                                    >Independent House</Select.Item
+                                                <Select.Item
+                                                    value="Free Hold plots"
+                                                    >Free Hold plots</Select.Item
                                                 >
-                                                <Select.Item value="villa"
-                                                    >Luxury Villa</Select.Item
+                                                <Select.Item
+                                                    value="Commercial Plots"
+                                                    >Commercial Plots</Select.Item
                                                 >
-                                                <Select.Item value="plot"
-                                                    >Plot / Land</Select.Item
+                                                <Select.Item
+                                                    value="Industrial or Factory Plots"
+                                                    >Industrial or Factory Plots</Select.Item
                                                 >
-                                                <Select.Item value="commercial"
-                                                    >Commercial Space</Select.Item
+                                                <Select.Item value="Villa's"
+                                                    >Villa's</Select.Item
                                                 >
                                             </Select.Content>
                                         </Select.Root>
@@ -456,9 +443,7 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="space-y-2">
-                                    <Label
-                                        >When are you planning to {transactionType}?</Label
-                                    >
+                                    <Label>When are you planning to buy?</Label>
                                     <Select.Root
                                         type="single"
                                         bind:value={timeline}

@@ -2,11 +2,49 @@ from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
 from firebase_admin import auth, firestore
 from datetime import datetime
+from .auth import verify_token, verify_admin
 
 users_bp = Blueprint('users', __name__)
 db, _ = initialize_firebase()
 
+@users_bp.route('/api/users/sync', methods=['POST'])
+@verify_token
+def sync_user():
+    print("Syncing user...")
+    user_data = request.user
+    print(f"User Data: {user_data}")
+    try:
+        uid = user_data['uid']
+        email = user_data.get('email')
+        
+        user_ref = db.collection('users').document(uid)
+        user_doc = user_ref.get()
+        
+        now = str(datetime.now())
+        
+        if not user_doc.exists:
+            # Create new user
+            user_ref.set({
+                'email': email,
+                'displayName': user_data.get('name', ''),
+                'photoURL': user_data.get('picture', ''),
+                'role': 'user',
+                'createdAt': now,
+                'lastLogin': now,
+                'status': 'active'
+            })
+        else:
+            # Update last login
+            user_ref.update({
+                'lastLogin': now
+            })
+            
+        return jsonify({"message": "User synced successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @users_bp.route('/api/users/<user_id>/favorites', methods=['POST'])
+@verify_token
 def add_favorite(user_id):
     try:
         data = request.json
@@ -30,6 +68,7 @@ def add_favorite(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/favorites/<property_id>', methods=['DELETE'])
+@verify_token
 def remove_favorite(user_id, property_id):
     try:
         db.collection('users').document(user_id).collection('favorites').document(property_id).delete()
@@ -38,6 +77,7 @@ def remove_favorite(user_id, property_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/favorites', methods=['GET'])
+@verify_token
 def get_favorites(user_id):
     try:
         favorites_ref = db.collection('users').document(user_id).collection('favorites')
@@ -63,6 +103,7 @@ def get_favorites(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/saved-searches', methods=['POST'])
+@verify_token
 def save_search(user_id):
     try:
         data = request.json
@@ -80,6 +121,7 @@ def save_search(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/saved-searches', methods=['GET'])
+@verify_token
 def get_saved_searches(user_id):
     try:
         searches_ref = db.collection('users').document(user_id).collection('savedSearches')
@@ -96,6 +138,7 @@ def get_saved_searches(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/saved-searches/<search_id>', methods=['DELETE'])
+@verify_token
 def delete_saved_search(user_id, search_id):
     try:
         db.collection('users').document(user_id).collection('savedSearches').document(search_id).delete()
@@ -104,6 +147,7 @@ def delete_saved_search(user_id, search_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/recently-viewed', methods=['POST'])
+@verify_token
 def add_recently_viewed(user_id):
     try:
         data = request.json
@@ -124,6 +168,7 @@ def add_recently_viewed(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/recently-viewed', methods=['GET'])
+@verify_token
 def get_recently_viewed(user_id):
     try:
         # Get recently viewed sorted by viewedAt desc, limit 4
@@ -148,6 +193,7 @@ def get_recently_viewed(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>', methods=['PUT'])
+@verify_token
 def update_user_profile(user_id):
     try:
         data = request.json
@@ -175,6 +221,7 @@ def update_user_profile(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>/inquiries', methods=['GET'])
+@verify_token
 def get_user_inquiries(user_id):
     try:
         # Fetch 'contact' events for this user
@@ -204,6 +251,7 @@ def get_user_inquiries(user_id):
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/api/users/<user_id>', methods=['DELETE'])
+@verify_token
 def delete_user(user_id):
     try:
         # 1. Delete user document from Firestore
@@ -223,3 +271,160 @@ def delete_user(user_id):
         return jsonify({"message": "User account deleted successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@users_bp.route('/api/admin/users', methods=['GET'])
+@verify_admin
+def get_all_users():
+    try:
+        # In a real app with many users, use pagination tokens.
+        # For this scale, fetching all is fine.
+        users_ref = db.collection('users')
+        docs = users_ref.stream()
+        
+        users = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            # Ensure critical fields exist
+            if 'email' not in data:
+                # Try to fetch from Auth if missing in Firestore (optional, slow)
+                pass
+            users.append(data)
+            
+        return jsonify(users), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route('/api/admin/users/<user_id>/details', methods=['GET'])
+@verify_admin
+def get_user_details_admin(user_id):
+    try:
+        # 1. User Profile
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+        user_data = user_doc.to_dict()
+        user_data['id'] = user_doc.id
+        
+        # 2. Stats
+        favorites_count = len(list(db.collection('users').document(user_id).collection('favorites').stream()))
+        inquiries_count = len(list(db.collection('events').where('user_id', '==', user_id).where('type', '==', 'contact').stream()))
+        
+        # 3. Recent Activity (Limit 20)
+        events_ref = db.collection('events').where('user_id', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(20)
+        activity = []
+        for doc in events_ref.stream():
+            evt = doc.to_dict()
+            if evt.get('timestamp'):
+                evt['timestamp'] = evt['timestamp'].isoformat()
+            activity.append(evt)
+            
+        return jsonify({
+            "profile": user_data,
+            "stats": {
+                "favorites": favorites_count,
+                "inquiries": inquiries_count
+            },
+            "activity": activity
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route('/api/admin/users/<user_id>/status', methods=['PATCH'])
+@verify_admin
+def update_user_status(user_id):
+    try:
+        data = request.json
+        status = data.get('status') # 'active' or 'suspended'
+        
+        if status not in ['active', 'suspended']:
+            return jsonify({"error": "Invalid status"}), 400
+            
+        # Update Firestore
+        db.collection('users').document(user_id).update({'status': status})
+        
+        # Update Auth
+        disabled = (status == 'suspended')
+        auth.update_user(user_id, disabled=disabled)
+        
+        return jsonify({"message": f"User {status} successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+@users_bp.route('/api/admin/users/<user_id>/role', methods=['PATCH'])
+@verify_admin
+def update_user_role(user_id):
+    try:
+        data = request.json
+        role = data.get('role')
+        
+        if role not in ['user', 'admin', 'superadmin']:
+            return jsonify({"error": "Invalid role"}), 400
+            
+        # Update Firestore
+        db.collection('users').document(user_id).update({'role': role})
+        
+        # Update Custom Claims (Optional but recommended for security rules)
+        # auth.set_custom_user_claims(user_id, {'role': role})
+        
+        return jsonify({"message": f"User role updated to {role} successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route('/api/users/<user_id>/comparison-list', methods=['GET'])
+@verify_token
+def get_comparison_list(user_id):
+    try:
+        doc_ref = db.collection('users').document(user_id).collection('comparison').document('list')
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            return jsonify([]), 200
+            
+        data = doc.to_dict()
+        last_updated = data.get('lastUpdated')
+        property_ids = data.get('propertyIds', [])
+        
+        # Lazy Cleanup: Check if older than 30 days
+        if last_updated:
+            # Handle string timestamp
+            if isinstance(last_updated, str):
+                try:
+                    last_updated_dt = datetime.fromisoformat(last_updated)
+                except ValueError:
+                    # Fallback or ignore
+                    last_updated_dt = datetime.now()
+            else:
+                last_updated_dt = last_updated
+                
+            # If older than 30 days, clear list
+            if (datetime.now() - last_updated_dt).days > 30:
+                doc_ref.delete()
+                return jsonify([]), 200
+
+        return jsonify(property_ids), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route('/api/users/<user_id>/comparison-list', methods=['PUT'])
+@verify_token
+def update_comparison_list(user_id):
+    try:
+        data = request.json
+        property_ids = data.get('propertyIds', [])
+        
+        if not isinstance(property_ids, list):
+            return jsonify({"error": "propertyIds must be a list"}), 400
+            
+        # Limit to 3 items
+        if len(property_ids) > 3:
+            property_ids = property_ids[:3]
+            
+        doc_ref = db.collection('users').document(user_id).collection('comparison').document('list')
+        doc_ref.set({
+            'propertyIds': property_ids,
+            'lastUpdated': datetime.now().isoformat()
+        })
+        
+        return jsonify({"message": "Comparison list updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+

@@ -6,6 +6,8 @@
     import { Badge } from "$lib/components/ui/badge";
     import { Button } from "$lib/components/ui/button";
     import { Calendar, MessageSquare, Clock } from "lucide-svelte";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     let inquiries: any[] = [];
     let appointments: any[] = [];
@@ -27,8 +29,8 @@
 
     async function fetchInquiries(uid: string) {
         try {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/users/${uid}/inquiries`,
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/users/${uid}/inquiries`,
             );
             if (res.ok) inquiries = await res.json();
         } catch (e) {
@@ -38,8 +40,8 @@
 
     async function fetchAppointments(uid: string) {
         try {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/users/${uid}/appointments`,
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/users/${uid}/appointments`,
             );
             if (res.ok) appointments = await res.json();
         } catch (e) {
@@ -49,8 +51,8 @@
 
     async function fetchRequests(uid: string) {
         try {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/users/${uid}/requests`,
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/users/${uid}/requests`,
             );
             if (res.ok) requests = await res.json();
         } catch (e) {

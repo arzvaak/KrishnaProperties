@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
 from firebase_admin import firestore, storage
 import time
+from routes.auth import verify_token
 
 chat_bp = Blueprint('chat', __name__)
 db, bucket = initialize_firebase()
@@ -26,6 +27,7 @@ def check_rate_limit(user_id):
     return True
 
 @chat_bp.route('/api/chat/send', methods=['POST'])
+@verify_token
 def send_message():
     try:
         data = request.json
@@ -104,6 +106,7 @@ def send_message():
         return jsonify({"error": str(e)}), 500
 
 @chat_bp.route('/api/chat/read', methods=['POST'])
+@verify_token
 def mark_read():
     try:
         data = request.json
@@ -123,6 +126,7 @@ def mark_read():
         return jsonify({"error": str(e)}), 500
 
 @chat_bp.route('/api/chat/conversations/<user_id>', methods=['GET'])
+@verify_token
 def get_conversations(user_id):
     try:
         # Fetch conversations where user is a participant

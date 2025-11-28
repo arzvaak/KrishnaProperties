@@ -11,6 +11,9 @@
   import { doc, onSnapshot } from "firebase/firestore";
   import { onDestroy, onMount } from "svelte";
 
+  import { slide } from "svelte/transition";
+  import NotificationCenter from "$lib/components/NotificationCenter.svelte";
+
   import {
     collection,
     query,
@@ -166,6 +169,7 @@
         <a
           href={$isAdmin ? "/admin/messages" : "/messages"}
           class="relative text-white/80 hover:text-amber-400 transition-colors"
+          aria-label="Messages"
         >
           <MessageCircle size={20} />
           {#if unreadCount > 0}
@@ -176,6 +180,8 @@
             </span>
           {/if}
         </a>
+
+        <NotificationCenter />
 
         <a
           href="/account/favorites"
@@ -213,7 +219,11 @@
     </div>
 
     <!-- Mobile Menu Toggle -->
-    <button class="md:hidden text-white" onclick={toggleMobileMenu}>
+    <button
+      class="md:hidden text-white"
+      onclick={toggleMobileMenu}
+      aria-label="Toggle mobile menu"
+    >
       {#if mobileMenuOpen}
         <X size={24} />
       {:else}
@@ -225,7 +235,8 @@
   <!-- Mobile Menu -->
   {#if mobileMenuOpen}
     <div
-      class="md:hidden absolute top-full left-0 right-0 bg-primary border-b border-white/10 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2"
+      transition:slide={{ duration: 300 }}
+      class="md:hidden absolute top-full left-0 right-0 bg-primary border-b border-white/10 shadow-xl p-4 flex flex-col gap-4"
     >
       <a
         href="/properties"

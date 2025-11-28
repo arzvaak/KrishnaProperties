@@ -84,7 +84,7 @@ def notify_price_drop(user_email, property_title, old_price, new_price, property
     send_email(user_email, subject, body)
 
 def notify_appointment_confirmation(user_email, property_title, date, time):
-    subject = f"Appointment Confirmed: {property_title}"
+    subject = f"Appointment Request Received: {property_title}"
     body = f"""
     Hello,
 
@@ -95,6 +95,43 @@ def notify_appointment_confirmation(user_email, property_title, date, time):
     Time: {time}
 
     We will contact you shortly to confirm the details.
+
+    Best regards,
+    Krishna Properties Team
+    """
+    send_email(user_email, subject, body)
+
+def notify_appointment_status_change(user_email, property_title, date, time, status):
+    subject = f"Appointment Update: {property_title}"
+    body = f"""
+    Hello,
+
+    Your appointment status has been updated to: <b>{status.upper()}</b>.
+
+    Property: {property_title}
+    Date: {date}
+    Time: {time}
+
+    If you have any questions, please contact us.
+
+    Best regards,
+    Krishna Properties Team
+    """
+    send_email(user_email, subject, body)
+
+def notify_appointment_reschedule(user_email, property_title, old_date, old_time, new_date, new_time):
+    subject = f"Appointment Rescheduled: {property_title}"
+    body = f"""
+    Hello,
+
+    Your appointment has been rescheduled.
+
+    Property: {property_title}
+    
+    <b>Previous Time:</b> {old_date} at {old_time}
+    <b>New Time:</b> {new_date} at {new_time}
+
+    Please let us know if this new time works for you.
 
     Best regards,
     Krishna Properties Team

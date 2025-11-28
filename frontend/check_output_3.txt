@@ -1,0 +1,24 @@
+Loading svelte-check in workspace: i:\KrishnaRealEstate\frontend
+Getting Svelte diagnostics...
+
+i:\KrishnaRealEstate\frontend\[32msrc\lib\components\NotificationCenter.svelte[39m:29:22
+[31mError[39m: Object literal may only specify known properties, and '"asChild"' does not exist in type 'Omit<{}, "child" | "children"> & { child?: Snippet<[{ props: Record<string, unknown>; }]> | undefined; children?: Snippet<[]> | undefined; style?: any; ref?: HTMLElement | ... 1 more ... | undefined; } & Without<...>'. (ts)
+[36m    <!-- @ts-ignore -->
+    <Popover.Trigger [35masChild[36m let:builder>
+        <Button[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\lib\components\NotificationCenter.svelte[39m:29:40
+[31mError[39m: '$$_reggirT_revopoP1.$$slot_def' is of type 'unknown'. (ts)
+[36m    <!-- @ts-ignore -->
+    <Popover.Trigger asChild let:builde[35m[36mr>
+        <Button[39m
+
+i:\KrishnaRealEstate\frontend\[32msrc\routes\faq\+page.svelte[39m:20:30
+[31mError[39m: Object literal may only specify known properties, and '"collapsible"' does not exist in type 'Omit<AccordionRootSinglePropsWithoutHTML, "child" | "children"> & { child?: Snippet<[{ props: Record<string, unknown>; }]> | undefined; children?: Snippet<...> | undefined; style?: any; ref?: HTMLElement | ... 1 more ... | undefined; } & Without<...>'. (ts)
+[36m    <!-- @ts-ignore -->
+    <Accordion type="single" [35mcollapsible[36m={true} class="w-full">
+        <AccordionItem value="item-1">[39m
+
+====================================
+[31msvelte-check found 3 errors and 0 warnings in 2 files
+[39m

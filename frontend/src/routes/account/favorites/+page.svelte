@@ -4,6 +4,8 @@
     import { goto } from "$app/navigation";
     import PropertyCard from "$lib/components/PropertyCard.svelte";
     import { Skeleton } from "$lib/components/ui/skeleton";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     let favorites: any[] = [];
     let loading = true;
@@ -17,8 +19,8 @@
 
             if (u) {
                 try {
-                    const response = await fetch(
-                        `http://127.0.0.1:5000/api/users/${u.uid}/favorites`,
+                    const response = await fetchWithAuth(
+                        `${API_BASE_URL}/api/users/${u.uid}/favorites`,
                     );
                     if (response.ok) {
                         favorites = await response.json();
