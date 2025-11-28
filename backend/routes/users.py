@@ -7,8 +7,11 @@ from .auth import verify_token, verify_admin
 users_bp = Blueprint('users', __name__)
 db, _ = initialize_firebase()
 
+from extensions import limiter
+
 @users_bp.route('/api/users/sync', methods=['POST'])
 @verify_token
+@limiter.limit("5 per minute")
 def sync_user():
     print("Syncing user...")
     user_data = request.user
@@ -43,9 +46,27 @@ def sync_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def verify_user_access(user_id):
+    """
+    Ensures the requesting user is either the owner of the data or an admin.
+    """
+    current_user = request.user
+    if current_user['uid'] != user_id:
+        # Check if admin
+        # Note: 'role' might be in custom claims or we fetch from DB.
+        # For efficiency, we rely on custom claims if available, or fetch.
+        # Here we assume verify_token puts claims in request.user or we check DB.
+        # Since verify_token just decodes token, let's check custom claims 'role'.
+        role = current_user.get('role')
+        if role not in ['admin', 'superadmin']:
+             return False
+    return True
+
 @users_bp.route('/api/users/<user_id>/favorites', methods=['POST'])
 @verify_token
 def add_favorite(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         data = request.json
         property_id = data.get('propertyId')
@@ -70,6 +91,8 @@ def add_favorite(user_id):
 @users_bp.route('/api/users/<user_id>/favorites/<property_id>', methods=['DELETE'])
 @verify_token
 def remove_favorite(user_id, property_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         db.collection('users').document(user_id).collection('favorites').document(property_id).delete()
         return jsonify({"message": "Removed from favorites"}), 200
@@ -79,6 +102,8 @@ def remove_favorite(user_id, property_id):
 @users_bp.route('/api/users/<user_id>/favorites', methods=['GET'])
 @verify_token
 def get_favorites(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         favorites_ref = db.collection('users').document(user_id).collection('favorites')
         docs = favorites_ref.stream()
@@ -105,6 +130,8 @@ def get_favorites(user_id):
 @users_bp.route('/api/users/<user_id>/saved-searches', methods=['POST'])
 @verify_token
 def save_search(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         data = request.json
         # Expected data: { name: "My Search", filters: { minPrice: 0, ... } }
@@ -123,6 +150,8 @@ def save_search(user_id):
 @users_bp.route('/api/users/<user_id>/saved-searches', methods=['GET'])
 @verify_token
 def get_saved_searches(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         searches_ref = db.collection('users').document(user_id).collection('savedSearches')
         docs = searches_ref.stream()
@@ -140,6 +169,8 @@ def get_saved_searches(user_id):
 @users_bp.route('/api/users/<user_id>/saved-searches/<search_id>', methods=['DELETE'])
 @verify_token
 def delete_saved_search(user_id, search_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         db.collection('users').document(user_id).collection('savedSearches').document(search_id).delete()
         return jsonify({"message": "Saved search deleted successfully"}), 200
@@ -149,6 +180,8 @@ def delete_saved_search(user_id, search_id):
 @users_bp.route('/api/users/<user_id>/recently-viewed', methods=['POST'])
 @verify_token
 def add_recently_viewed(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         data = request.json
         property_id = data.get('propertyId')
@@ -170,6 +203,8 @@ def add_recently_viewed(user_id):
 @users_bp.route('/api/users/<user_id>/recently-viewed', methods=['GET'])
 @verify_token
 def get_recently_viewed(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         # Get recently viewed sorted by viewedAt desc, limit 4
         docs = db.collection('users').document(user_id).collection('recentlyViewed')\
@@ -195,6 +230,8 @@ def get_recently_viewed(user_id):
 @users_bp.route('/api/users/<user_id>', methods=['PUT'])
 @verify_token
 def update_user_profile(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         data = request.json
         allowed_fields = ['displayName', 'phoneNumber', 'bio', 'photoURL', 'emailNotifications']
@@ -223,6 +260,8 @@ def update_user_profile(user_id):
 @users_bp.route('/api/users/<user_id>/inquiries', methods=['GET'])
 @verify_token
 def get_user_inquiries(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         # Fetch 'contact' events for this user
         docs = db.collection('events')\
@@ -253,6 +292,8 @@ def get_user_inquiries(user_id):
 @users_bp.route('/api/users/<user_id>', methods=['DELETE'])
 @verify_token
 def delete_user(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         # 1. Delete user document from Firestore
         db.collection('users').document(user_id).delete()
@@ -356,14 +397,14 @@ def update_user_role(user_id):
         data = request.json
         role = data.get('role')
         
-        if role not in ['user', 'admin', 'superadmin']:
+        if role not in ['user', 'admin', 'superadmin', 'editor', 'author']:
             return jsonify({"error": "Invalid role"}), 400
             
         # Update Firestore
         db.collection('users').document(user_id).update({'role': role})
         
-        # Update Custom Claims (Optional but recommended for security rules)
-        # auth.set_custom_user_claims(user_id, {'role': role})
+        # Update Custom Claims
+        auth.set_custom_user_claims(user_id, {'role': role})
         
         return jsonify({"message": f"User role updated to {role} successfully"}), 200
     except Exception as e:
@@ -372,6 +413,8 @@ def update_user_role(user_id):
 @users_bp.route('/api/users/<user_id>/comparison-list', methods=['GET'])
 @verify_token
 def get_comparison_list(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         doc_ref = db.collection('users').document(user_id).collection('comparison').document('list')
         doc = doc_ref.get()
@@ -407,6 +450,8 @@ def get_comparison_list(user_id):
 @users_bp.route('/api/users/<user_id>/comparison-list', methods=['PUT'])
 @verify_token
 def update_comparison_list(user_id):
+    if not verify_user_access(user_id):
+        return jsonify({"error": "Unauthorized access to this user data"}), 403
     try:
         data = request.json
         property_ids = data.get('propertyIds', [])

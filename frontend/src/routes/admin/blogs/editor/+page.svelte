@@ -17,6 +17,7 @@
     } from "lucide-svelte";
     import { API_BASE_URL } from "$lib/config";
     import { fetchWithAuth } from "$lib/api";
+    import MarkdownEditor from "$lib/components/admin/MarkdownEditor.svelte";
 
     let loading = false;
     let saving = false;
@@ -276,12 +277,7 @@
                         Supports basic HTML tags. Use <code>&lt;h2&gt;</code>,
                         <code>&lt;p&gt;</code>, <code>&lt;ul&gt;</code>, etc.
                     </p>
-                    <Textarea
-                        id="content"
-                        bind:value={formData.content}
-                        placeholder="Write your article content here..."
-                        class="min-h-[400px] font-mono"
-                    />
+                    <MarkdownEditor bind:value={formData.content} />
                 </div>
             </div>
         </div>

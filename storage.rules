@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper to check if user has allowed role
+    function hasRole(role) {
+      return request.auth != null && request.auth.token.role == role;
+    }
+    
+    function isStaff() {
+      return hasRole('admin') || hasRole('superadmin') || hasRole('editor') || hasRole('author');
+    }
+
+    match /{allPaths=**} {
+      // Allow public read
+      allow read: if true;
+      
+      // Allow write if staff and valid file
+      allow write: if isStaff() 
+                   && request.resource.size < 50 * 1024 * 1024 // 50MB
+                   && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('video/.*'));
+    }
+  }
+}

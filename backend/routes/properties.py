@@ -7,6 +7,29 @@ from utils.email_service import notify_saved_search_match, notify_price_drop
 properties_bp = Blueprint('properties', __name__)
 db, _ = initialize_firebase()
 
+def validate_property_data(data, partial=False):
+    required_fields = ['title', 'price', 'type']
+    if not partial:
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return False, f"Missing required field: {field}"
+    
+    # Validate price format (simple check) if present
+    if 'price' in data:
+        price = data['price']
+        try:
+            # Check if it can be converted to float/int
+            # Handle string with commas/symbols if needed, but for API we expect clean numbers or simple strings
+            # If we accept "₹ 1,00,000", we should parse it here.
+            # For now, let's assume we want strict numbers or numeric strings
+            if isinstance(price, str):
+                price = price.replace('₹', '').replace(',', '').strip()
+            float(price)
+        except (ValueError, TypeError):
+            return False, "Invalid price format"
+        
+    return True, None
+
 @properties_bp.route('/api/properties', methods=['GET'])
 def get_properties():
     try:
@@ -89,6 +112,11 @@ def get_properties():
 def create_property():
     try:
         data = request.get_json()
+        
+        is_valid, error_msg = validate_property_data(data)
+        if not is_valid:
+            return jsonify({"error": error_msg}), 400
+            
         data['createdAt'] = firestore.SERVER_TIMESTAMP
         
         property_ref = db.collection('properties').add(data)[1]
@@ -162,6 +190,14 @@ def log_property_history(property_id, action, details, user_id="system"):
 def update_property(property_id):
     try:
         data = request.get_json()
+        print(f"DEBUG: update_property data: {data}")
+        
+        # Validate data (using same validator as create)
+        is_valid, error_msg = validate_property_data(data, partial=True)
+        print(f"DEBUG: validation result: {is_valid}, {error_msg}")
+        if not is_valid:
+             return jsonify({"error": error_msg}), 400
+
         doc_ref = db.collection('properties').document(property_id)
         old_doc = doc_ref.get()
         
@@ -172,7 +208,7 @@ def update_property(property_id):
             old_price = parse_price(old_data.get('price'))
             new_price = parse_price(data.get('price'))
             
-            if old_price != new_price:
+            if 'price' in data and old_price != new_price:
                 log_property_history(property_id, "Price Change", f"Price changed from {old_data.get('price')} to {data.get('price')}")
                 
                 # Check for price drop notification
@@ -184,11 +220,11 @@ def update_property(property_id):
 
             # Check for other changes (simplified)
             changes = []
-            if old_data.get('title') != data.get('title'):
+            if 'title' in data and old_data.get('title') != data.get('title'):
                 changes.append("Title")
-            if old_data.get('type') != data.get('type'):
+            if 'type' in data and old_data.get('type') != data.get('type'):
                 changes.append("Type")
-            if old_data.get('status') != data.get('status'): # If we had status
+            if 'status' in data and old_data.get('status') != data.get('status'): # If we had status
                 changes.append("Status")
                 
             if changes:

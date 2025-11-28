@@ -76,6 +76,8 @@ def get_all_blogs_admin():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+import bleach
+
 @blogs_bp.route('/api/admin/blogs', methods=['POST'])
 @verify_admin
 def create_blog():
@@ -92,6 +94,15 @@ def create_blog():
         if not title or not content:
             return jsonify({"error": "Title and Content are required"}), 400
             
+        # Sanitize content
+        allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'a', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'br', 'img', 'blockquote', 'code', 'pre']
+        allowed_attrs = {
+            '*': ['class', 'style'],
+            'a': ['href', 'title', 'target'],
+            'img': ['src', 'alt', 'title', 'width', 'height']
+        }
+        clean_content = bleach.clean(content, tags=allowed_tags, attributes=allowed_attrs)
+
         slug = get_slug(title)
         
         # Check for duplicate slug
@@ -102,7 +113,7 @@ def create_blog():
         blog_data = {
             'title': title,
             'slug': slug,
-            'content': content,
+            'content': clean_content,
             'excerpt': excerpt,
             'image': image,
             'category': category,
@@ -132,7 +143,17 @@ def update_blog(blog_id):
         fields = ['title', 'content', 'excerpt', 'image', 'category', 'published', 'featured']
         for field in fields:
             if field in data:
-                update_data[field] = data[field]
+                val = data[field]
+                if field == 'content':
+                    # Sanitize content
+                    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'a', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'br', 'img', 'blockquote', 'code', 'pre']
+                    allowed_attrs = {
+                        '*': ['class', 'style'],
+                        'a': ['href', 'title', 'target'],
+                        'img': ['src', 'alt', 'title', 'width', 'height']
+                    }
+                    val = bleach.clean(val, tags=allowed_tags, attributes=allowed_attrs)
+                update_data[field] = val
                 
         if 'title' in data:
             # Optionally update slug, but usually better to keep it stable for SEO

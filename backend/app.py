@@ -32,18 +32,25 @@ from routes.cleanup import cleanup_bp
 from routes.notifications import notifications_bp
 
 app = Flask(__name__)
-CORS(app)
+# Restrict CORS to frontend origin
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}})
 
 # Security Headers
-Talisman(app, force_https=False, content_security_policy=None)
+csp = {
+    'default-src': '\'self\'',
+    'script-src': '\'self\' \'unsafe-inline\' https://apis.google.com',
+    'connect-src': '\'self\' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com',
+    'img-src': '\'self\' data: https://firebasestorage.googleapis.com',
+    'style-src': '\'self\' \'unsafe-inline\''
+}
+# Force HTTPS in production (when debug is False)
+force_https = os.getenv('FLASK_DEBUG', 'False') == 'False'
+Talisman(app, force_https=force_https, content_security_policy=csp)
+
+from extensions import limiter
 
 # Rate Limiting
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["2000 per day", "500 per hour"],
-    storage_uri="memory://"
-)
+limiter.init_app(app)
 
 app.register_blueprint(properties_bp)
 app.register_blueprint(users_bp)
@@ -69,4 +76,4 @@ def health_check():
     return jsonify({"status": "healthy", "service": "Real Estate Backend"})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False') == 'True', port=5000)
