@@ -1,6 +1,23 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+import sentry_sdk
 from firebase_config import initialize_firebase
+
+import os
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
 
 from routes.properties import properties_bp
 from routes.users import users_bp
@@ -10,9 +27,23 @@ from routes.requests import requests_bp
 from routes.inquiries import inquiries_bp
 from routes.chat import chat_bp
 from routes.leads import leads_bp
+from routes.blogs import blogs_bp
+from routes.cleanup import cleanup_bp
+from routes.notifications import notifications_bp
 
 app = Flask(__name__)
 CORS(app)
+
+# Security Headers
+Talisman(app, force_https=False, content_security_policy=None)
+
+# Rate Limiting
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 app.register_blueprint(properties_bp)
 app.register_blueprint(users_bp)
@@ -22,6 +53,9 @@ app.register_blueprint(requests_bp)
 app.register_blueprint(inquiries_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(leads_bp)
+app.register_blueprint(blogs_bp)
+app.register_blueprint(cleanup_bp)
+app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
 
 # Initialize Firebase
 try:

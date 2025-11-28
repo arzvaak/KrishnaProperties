@@ -12,14 +12,18 @@
   import { toast } from "svelte-sonner";
   import { LayoutGrid, List, Pencil, Trash2 } from "lucide-svelte";
   import PropertyCard from "$lib/components/PropertyCard.svelte";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
 
   let properties: any[] = [];
   let loading = true;
-  let viewMode: "list" | "grid" = "grid"; // Default to grid as requested
+  let viewMode: "list" | "grid" = "grid";
 
   async function fetchProperties() {
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/properties");
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/properties?limit=100`,
+      );
       if (!response.ok) throw new Error("Failed to fetch properties");
       const data = await response.json();
       properties = data.properties || [];
@@ -33,8 +37,8 @@
   async function deleteProperty(id: string) {
     if (!confirm("Are you sure you want to delete this property?")) return;
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/properties/${id}`,
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/properties/${id}`,
         {
           method: "DELETE",
         },

@@ -13,6 +13,8 @@
   import { Label } from "$lib/components/ui/label";
   import { toast } from "svelte-sonner";
   import { reveal } from "$lib/actions/reveal";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
 
   let properties: any[] = [];
   let loading = true;
@@ -37,7 +39,12 @@
   let savedSearches: any[] = [];
   let recentlyViewed: any[] = [];
 
-  async function fetchProperties() {
+  async function fetchProperties(reset = false) {
+    if (reset) {
+      properties = [];
+      currentPage = 1;
+    }
+
     loading = true;
     error = null;
     try {
@@ -53,13 +60,18 @@
       params.append("page", currentPage.toString());
 
       const response = await fetch(
-        `http://127.0.0.1:5000/api/properties?${params.toString()}`,
+        `${API_BASE_URL}/api/properties?${params.toString()}`,
       );
       if (!response.ok) throw new Error("Failed to fetch properties");
       const data = await response.json();
-      properties = data.properties;
+
+      if (reset) {
+        properties = data.properties;
+      } else {
+        properties = [...properties, ...data.properties];
+      }
+
       totalPages = data.total_pages;
-      currentPage = data.page;
       totalProperties = data.total;
     } catch (e: any) {
       error = e.message;
@@ -81,20 +93,19 @@
     bedrooms = 0;
     propertyType = "all";
     currentPage = 1;
-    fetchProperties();
+    fetchProperties(true);
   }
 
   function handleSortChange(value: string) {
     sortBy = value;
-    currentPage = 1; // Reset to first page on sort change
-    fetchProperties();
+    fetchProperties(true);
   }
 
-  function handlePageChange(page: number) {
-    if (page < 1 || page > totalPages) return;
-    currentPage = page;
-    fetchProperties();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function loadMore() {
+    if (currentPage < totalPages) {
+      currentPage++;
+      fetchProperties();
+    }
   }
 
   async function saveSearch() {
@@ -114,8 +125,8 @@
         sortBy,
       };
 
-      const res = await fetch(
-        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches`,
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/api/users/${$user.uid}/saved-searches`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -136,8 +147,8 @@
   async function loadSavedSearches() {
     if (!$user) return;
     try {
-      const res = await fetch(
-        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches`,
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/api/users/${$user.uid}/saved-searches`,
       );
       if (res.ok) {
         savedSearches = await res.json();
@@ -157,15 +168,15 @@
     propertyType = f.propertyType || "all";
     sortBy = f.sortBy || "newest";
     isSavedSearchesListOpen = false;
-    fetchProperties();
+    fetchProperties(true);
     toast.success("Filters applied");
   }
 
   async function deleteSearch(id: string) {
     if (!$user) return;
     try {
-      await fetch(
-        `http://127.0.0.1:5000/api/users/${$user.uid}/saved-searches/${id}`,
+      await fetchWithAuth(
+        `${API_BASE_URL}/api/users/${$user.uid}/saved-searches/${id}`,
         {
           method: "DELETE",
         },
@@ -178,15 +189,15 @@
   }
 
   onMount(() => {
-    fetchProperties();
+    fetchProperties(true);
 
     // Load recently viewed
     user.subscribe(async (u) => {
       if (u) {
         // Logged in: Fetch from API
         try {
-          const res = await fetch(
-            `http://127.0.0.1:5000/api/users/${u.uid}/recently-viewed`,
+          const res = await fetchWithAuth(
+            `${API_BASE_URL}/api/users/${u.uid}/recently-viewed`,
           );
           if (res.ok) {
             recentlyViewed = await res.json();
@@ -237,7 +248,7 @@
       bind:bedrooms
       bind:propertyType
       bind:showFilters
-      onSearch={fetchProperties}
+      onSearch={() => fetchProperties(true)}
       onClear={clearFilters}
       onSaveSearch={() => (isSaveSearchOpen = true)}
       onLoadSavedSearches={loadSavedSearches}
@@ -287,7 +298,9 @@
       >
         <p class="font-medium">Error loading properties</p>
         <p class="text-sm opacity-80 mb-4">{error}</p>
-        <Button variant="outline" onclick={fetchProperties}>Try Again</Button>
+        <Button variant="outline" onclick={() => fetchProperties()}
+          >Try Again</Button
+        >
       </div>
     {:else if properties.length === 0}
       <div
@@ -313,37 +326,17 @@
         {/each}
       </div>
 
-      <!-- Pagination -->
-      {#if totalPages > 1}
-        <div class="flex justify-center items-center gap-4 mt-16">
+      <!-- Load More -->
+      {#if currentPage < totalPages}
+        <div class="flex justify-center mt-16">
           <Button
             variant="outline"
-            onclick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            size="lg"
+            onclick={loadMore}
+            disabled={loading}
+            class="min-w-[200px]"
           >
-            Previous
-          </Button>
-
-          <div class="flex items-center gap-2">
-            {#each Array(totalPages) as _, i}
-              <button
-                class="w-10 h-10 rounded-full flex items-center justify-center transition-colors {currentPage ===
-                i + 1
-                  ? 'bg-primary text-primary-foreground font-bold'
-                  : 'hover:bg-muted'}"
-                onclick={() => handlePageChange(i + 1)}
-              >
-                {i + 1}
-              </button>
-            {/each}
-          </div>
-
-          <Button
-            variant="outline"
-            onclick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next
+            {loading ? "Loading..." : "Load More Properties"}
           </Button>
         </div>
       {/if}

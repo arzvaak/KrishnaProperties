@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { user } from "$lib/stores/auth";
-    import { Search } from "lucide-svelte";
+    import { Search, MessageSquare } from "lucide-svelte";
     import type { Timestamp } from "firebase/firestore";
 
     export let conversations: any[] = [];
@@ -108,8 +108,15 @@
         {/each}
 
         {#if filteredConversations.length === 0}
-            <div class="p-8 text-center text-gray-500">
-                <p>No conversations found</p>
+            <div
+                class="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-40"
+            >
+                <div
+                    class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3"
+                >
+                    <MessageSquare class="w-6 h-6 text-gray-400" />
+                </div>
+                <p class="font-medium">No conversations found</p>
             </div>
         {/if}
     </div>

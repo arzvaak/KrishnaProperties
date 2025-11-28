@@ -75,10 +75,19 @@
                     </Select.Trigger>
                     <Select.Content>
                         <Select.Item value="all">Any Type</Select.Item>
-                        <Select.Item value="Apartment">Apartment</Select.Item>
-                        <Select.Item value="Villa">Villa</Select.Item>
-                        <Select.Item value="Penthouse">Penthouse</Select.Item>
-                        <Select.Item value="Plot">Plot</Select.Item>
+                        <Select.Item value="Authority plots"
+                            >Authority plots</Select.Item
+                        >
+                        <Select.Item value="Free Hold plots"
+                            >Free Hold plots</Select.Item
+                        >
+                        <Select.Item value="Commercial Plots"
+                            >Commercial Plots</Select.Item
+                        >
+                        <Select.Item value="Industrial or Factory Plots"
+                            >Industrial or Factory Plots</Select.Item
+                        >
+                        <Select.Item value="Villa's">Villa's</Select.Item>
                     </Select.Content>
                 </Select.Root>
             </div>

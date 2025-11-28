@@ -1,11 +1,3 @@
-from flask import Blueprint, request, jsonify
-from firebase_config import initialize_firebase
-from firebase_admin import firestore, auth
-from utils.email_service import notify_saved_search_match, notify_price_drop
-
-properties_bp = Blueprint('properties', __name__)
-db, bucket = initialize_firebase()
-
 @properties_bp.route('/api/properties', methods=['GET'])
 def get_properties():
     try:
@@ -79,21 +71,6 @@ def get_properties():
             "total": total,
             "page": page,
             "total_pages": total_pages
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@properties_bp.route('/api/properties', methods=['POST'])
-def create_property():
-    try:
-        data = request.json
-        # TODO: Add validation and admin check
-        update_time, property_ref = db.collection('properties').add(data)
-        
-        # Check for matches
-        try:
-            check_new_listing_matches(data, property_ref.id)
-        except Exception as e:
             print(f"Error checking matches: {e}")
 
         return jsonify({"id": property_ref.id, "message": "Property created successfully"}), 201
@@ -115,6 +92,7 @@ def get_property(property_id):
         return jsonify({"error": str(e)}), 500
 
 @properties_bp.route('/api/properties/<property_id>', methods=['DELETE'])
+@verify_admin
 def delete_property(property_id):
     try:
         db.collection('properties').document(property_id).delete()
@@ -122,16 +100,55 @@ def delete_property(property_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@properties_bp.route('/api/properties/<property_id>', methods=['PUT'])
-def update_property(property_id):
+@properties_bp.route('/api/properties/<property_id>/history', methods=['GET'])
+def get_property_history(property_id):
     try:
-        data = request.json
+        history_ref = db.collection('properties').document(property_id).collection('history')
+        docs = history_ref.order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
         
-        # Check for price drop before updating
-        try:
-            check_price_drop(property_id, data)
-        except Exception as e:
-            print(f"Error checking price drop: {e}")
+        history = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            history.append(data)
+            
+        return jsonify(history), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def log_property_history(property_id, action, details, user_id="system"):
+    try:
+        history_ref = db.collection('properties').document(property_id).collection('history')
+        history_ref.add({
+            "action": action,
+            "details": details,
+            "timestamp": firestore.SERVER_TIMESTAMP,
+            "userId": user_id
+        })
+    except Exception as e:
+        print(f"Error logging history: {e}")
+            
+            if old_price != new_price:
+                log_property_history(property_id, "Price Change", f"Price changed from {old_data.get('price')} to {data.get('price')}")
+                
+                # Check for price drop notification
+                if new_price < old_price:
+                    try:
+                        check_price_drop(property_id, data)
+                    except Exception as e:
+                        print(f"Error checking price drop: {e}")
+
+            # Check for other changes (simplified)
+            changes = []
+            if old_data.get('title') != data.get('title'):
+                changes.append("Title")
+            if old_data.get('type') != data.get('type'):
+                changes.append("Type")
+            if old_data.get('status') != data.get('status'): # If we had status
+                changes.append("Status")
+                
+            if changes:
+                log_property_history(property_id, "Property Updated", f"Updated fields: {', '.join(changes)}")
 
         db.collection('properties').document(property_id).update(data)
         return jsonify({"message": "Property updated successfully"}), 200

@@ -12,6 +12,9 @@
     } from "$lib/components/ui/card";
     import { toast } from "svelte-sonner";
     import { Mail, Phone, MapPin } from "lucide-svelte";
+    import { browser } from "$app/environment";
+    import Map from "$lib/components/Map.svelte";
+    import { API_BASE_URL } from "$lib/config";
 
     let loading = false;
     let name = "";
@@ -23,7 +26,7 @@
         loading = true;
         try {
             // 1. Send inquiry to backend
-            await fetch("http://127.0.0.1:5000/api/inquiries", {
+            await fetch(`${API_BASE_URL}/api/inquiries`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -166,5 +169,20 @@
                 </Button>
             </CardContent>
         </Card>
+    </div>
+
+    <!-- Map Section -->
+    <div class="mt-16">
+        <h2 class="text-2xl font-bold mb-6">Visit Our Office</h2>
+        <div class="h-[400px] rounded-xl overflow-hidden border shadow-sm">
+            {#if browser}
+                <Map
+                    lat={19.0596}
+                    lng={72.8295}
+                    zoom={15}
+                    interactive={false}
+                />
+            {/if}
+        </div>
     </div>
 </div>

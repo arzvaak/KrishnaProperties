@@ -11,11 +11,19 @@
   import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
 
   async function handleGoogleLogin() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+
+      // Sync user with backend
+      await fetchWithAuth(`${API_BASE_URL}/api/users/sync`, {
+        method: "POST",
+      });
+
       toast.success("Logged in with Google!");
       goto("/");
     } catch (error: any) {

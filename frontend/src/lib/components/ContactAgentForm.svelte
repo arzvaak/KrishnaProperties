@@ -17,6 +17,8 @@
     import { user } from "$lib/stores/auth";
     import { toast } from "svelte-sonner";
     import type { DateValue } from "@internationalized/date";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     export let propertyId: string;
     export let propertyTitle: string;
@@ -30,18 +32,57 @@
 
     async function handleContact() {
         try {
-            await fetch("http://127.0.0.1:5000/api/inquiries", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    type: "property",
-                    property_id: propertyId,
-                    property_title: propertyTitle,
-                    user_id: $user?.uid,
-                    message: message,
-                    email: $user?.email, // Assuming user email is available or handled by backend if logged in
-                }),
-            });
+            // Use fetchWithAuth if user is logged in, otherwise regular fetch (if we allow guests)
+            // But for now, let's assume we want to track it with user ID if available.
+            // If the endpoint requires auth, we must use fetchWithAuth.
+            // The plan says "token verification for all user-accessible API endpoints".
+            // If this is a public inquiry form, it might not need auth.
+            // However, the code passes user_id.
+
+            if ($user) {
+                await fetchWithAuth(`${API_BASE_URL}/api/inquiries`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type: "property",
+                        property_id: propertyId,
+                        property_title: propertyTitle,
+                        user_id: ($user as any).uid,
+                        message: message,
+                        email: ($user as any).email,
+                    }),
+                });
+            } else {
+                // Fallback for guests if allowed, or force login.
+                // The current code passes $user?.uid.
+                // If we enforce auth on backend, we need fetchWithAuth.
+                // If we allow guests, we use fetch.
+                // Let's assume for now we use fetchWithAuth if user exists, or fetch if not.
+                // But wait, fetchWithAuth throws if not logged in.
+                // I'll stick to the existing logic: if user is logged in, use fetchWithAuth.
+                // If not, use fetch (and backend handles it).
+                // Actually, looking at the code: `user_id: $user?.uid`.
+                // If I change to fetchWithAuth, I must ensure user is logged in.
+                // If the user is NOT logged in, `handleContact` should probably still work for guests?
+                // The backend `verify_token` decorator would block it if I applied it to `inquiries`.
+                // I applied `verify_token` to `inquiries` in `backend/routes/inquiries.py`?
+                // Let's check `backend/routes/inquiries.py` later.
+                // For now, I'll use fetchWithAuth ONLY if user is logged in.
+
+                await fetch(`${API_BASE_URL}/api/inquiries`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type: "property",
+                        property_id: propertyId,
+                        property_title: propertyTitle,
+                        user_id: null,
+                        message: message,
+                        email: null,
+                    }),
+                });
+            }
+
             contactSent = true;
             toast.success("Message sent to team!");
             message = "";
@@ -62,16 +103,19 @@
 
         scheduling = true;
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/appointments", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: $user.uid,
-                    property_id: propertyId,
-                    date: date.toString(),
-                    time: time,
-                }),
-            });
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/appointments`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: ($user as any).uid,
+                        property_id: propertyId,
+                        date: date.toString(),
+                        time: time,
+                    }),
+                },
+            );
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to schedule");

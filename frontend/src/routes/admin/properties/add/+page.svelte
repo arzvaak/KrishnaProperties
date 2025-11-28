@@ -14,6 +14,10 @@
     import { storage } from "$lib/firebase";
     import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
     import Map from "$lib/components/Map.svelte";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
+    import AmenitiesInput from "$lib/components/admin/AmenitiesInput.svelte";
+    import imageCompression from "browser-image-compression";
 
     let loading = false;
     let uploading = false;
@@ -25,7 +29,7 @@
         title: "",
         location: "",
         price: "",
-        type: "For Sale",
+        type: "Authority plots",
         bedrooms: "",
         bathrooms: "",
         area: "",
@@ -35,6 +39,8 @@
         videoUrl: "",
         videoType: "url" as "url" | "file",
         coordinates: { lat: 19.076, lng: 72.8777 },
+        neighborhood: "",
+        amenities: [] as { name: string; type: string; distance: string }[],
     };
 
     function handleLocationSelect(lat: number, lng: number) {
@@ -60,11 +66,28 @@
         if (files.length === 0) return [];
 
         const uploadPromises = files.map(async (file) => {
+            // Compress image
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+            };
+
+            let uploadFile = file;
+            try {
+                uploadFile = await imageCompression(file, options);
+                console.log(
+                    `Compressed ${file.name}: ${file.size / 1024 / 1024}MB -> ${uploadFile.size / 1024 / 1024}MB`,
+                );
+            } catch (error) {
+                console.error("Compression failed:", error);
+            }
+
             const storageRef = ref(
                 storage,
-                `properties/${Date.now()}_${file.name}`,
+                `properties/${Date.now()}_${uploadFile.name}`,
             );
-            await uploadBytes(storageRef, file);
+            await uploadBytes(storageRef, uploadFile);
             return await getDownloadURL(storageRef);
         });
 
@@ -101,11 +124,10 @@
                 uploading = false;
             }
 
-            const response = await fetch(
-                "http://127.0.0.1:5000/api/properties",
+            const response = await fetchWithAuth(
+                `${API_BASE_URL}/api/properties`,
                 {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
                 },
             );
@@ -192,13 +214,18 @@
             </div>
 
             <div class="space-y-2">
-                <Label for="type">Type</Label>
+                <Label for="type">Property Category</Label>
                 <select
                     class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     bind:value={formData.type}
                 >
-                    <option value="For Sale">For Sale</option>
-                    <option value="For Rent">For Rent</option>
+                    <option value="Authority plots">Authority plots</option>
+                    <option value="Free Hold plots">Free Hold plots</option>
+                    <option value="Commercial Plots">Commercial Plots</option>
+                    <option value="Industrial or Factory Plots"
+                        >Industrial or Factory Plots</option
+                    >
+                    <option value="Villa's">Villa's</option>
                 </select>
             </div>
 

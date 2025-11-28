@@ -101,7 +101,13 @@ for i in range(12):
         "bedrooms": random.randint(1, 5),
         "bathrooms": random.randint(1, 6),
         "area": random.randint(500, 5000),
-        "type": random.choice(["For Sale", "For Rent"]),
+        "type": random.choice([
+            "Authority plots", 
+            "Free Hold plots", 
+            "Commercial Plots", 
+            "Industrial or Factory Plots", 
+            "Villa's"
+        ]),
         "description": desc,
         "imageUrl": imgs[0],
         "images": imgs,
