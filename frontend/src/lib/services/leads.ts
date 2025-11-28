@@ -1,6 +1,8 @@
 import { toast } from "svelte-sonner";
+import { API_BASE_URL } from "$lib/config";
+import { fetchWithAuth } from "$lib/api";
 
-const API_BASE = "http://localhost:5000/api/admin/leads";
+const API_BASE = `${API_BASE_URL}/api/admin/leads`;
 
 export interface Lead {
     id: string;
@@ -27,7 +29,7 @@ export interface Note {
 
 export async function fetchLeads(): Promise<Lead[]> {
     try {
-        const res = await fetch(API_BASE);
+        const res = await fetchWithAuth(API_BASE);
         if (!res.ok) throw new Error("Failed to fetch leads");
         return await res.json();
     } catch (error) {
@@ -39,7 +41,7 @@ export async function fetchLeads(): Promise<Lead[]> {
 
 export async function exportLeads() {
     try {
-        const res = await fetch(`${API_BASE}/export`);
+        const res = await fetchWithAuth(`${API_BASE}/export`);
         if (!res.ok) throw new Error("Failed to export leads");
 
         const blob = await res.blob();
@@ -60,7 +62,7 @@ export async function exportLeads() {
 
 export async function fetchLeadDetails(type: string, id: string): Promise<Lead | null> {
     try {
-        const res = await fetch(`${API_BASE}/${type}/${id}`);
+        const res = await fetchWithAuth(`${API_BASE}/${type}/${id}`);
         if (!res.ok) throw new Error("Failed to fetch lead details");
         return await res.json();
     } catch (error) {
@@ -72,9 +74,8 @@ export async function fetchLeadDetails(type: string, id: string): Promise<Lead |
 
 export async function updateLeadStatus(type: string, id: string, status: string): Promise<boolean> {
     try {
-        const res = await fetch(`${API_BASE}/${type}/${id}`, {
+        const res = await fetchWithAuth(`${API_BASE}/${type}/${id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status }),
         });
         if (!res.ok) throw new Error("Failed to update status");
@@ -88,9 +89,8 @@ export async function updateLeadStatus(type: string, id: string, status: string)
 
 export async function addLeadNote(type: string, id: string, text: string, author: string = "Admin"): Promise<Note | null> {
     try {
-        const res = await fetch(`${API_BASE}/${type}/${id}/notes`, {
+        const res = await fetchWithAuth(`${API_BASE}/${type}/${id}/notes`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text, author }),
         });
         if (!res.ok) throw new Error("Failed to add note");

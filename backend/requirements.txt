@@ -3,3 +3,7 @@ firebase-admin
 flask-cors
 python-dotenv
 requests
+Flask-Limiter
+bleach
+Flask-Talisman
+sentry-sdk[flask]

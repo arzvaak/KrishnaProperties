@@ -3,6 +3,7 @@
   import Navbar from "$lib/components/Navbar.svelte";
   import Footer from "$lib/components/Footer.svelte";
   import { Toaster } from "$lib/components/ui/sonner";
+  import ComparisonFloatingBar from "$lib/components/comparison/ComparisonFloatingBar.svelte";
   import { page } from "$app/stores";
 
   let { children } = $props();
@@ -19,4 +20,5 @@
   </main>
   <Footer />
   <Toaster />
+  <ComparisonFloatingBar />
 </div>

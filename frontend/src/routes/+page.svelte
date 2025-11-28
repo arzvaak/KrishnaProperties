@@ -2,40 +2,43 @@
   import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-  } from "$lib/components/ui/card";
+  import { Card, CardContent } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
-  import { Separator } from "$lib/components/ui/separator";
   import { reveal } from "$lib/actions/reveal";
   import FeaturedCollection from "$lib/components/FeaturedCollection.svelte";
+  import StatsSection from "$lib/components/home/StatsSection.svelte";
+  import TestimonialsSection from "$lib/components/home/TestimonialsSection.svelte";
+  import WhyChooseUsSection from "$lib/components/home/WhyChooseUsSection.svelte";
+  import NewsletterSection from "$lib/components/home/NewsletterSection.svelte";
   import {
     CheckCircle2,
     Users,
-    Home,
     TrendingUp,
     Search,
     Sparkles,
-    Quote,
   } from "lucide-svelte";
+  import { user } from "$lib/stores/auth";
 
   let properties: any[] = [];
   let featuredProperties: any[] = [];
   let loading = true;
 
+  import { API_BASE_URL } from "$lib/config";
+
   onMount(async () => {
     try {
-      // Track site view
-      fetch("http://127.0.0.1:5000/api/analytics/track", {
+      // Track Page View
+      fetch(`${API_BASE_URL}/api/analytics/track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "site_view" }),
+        body: JSON.stringify({
+          type: "page_view",
+          page: "/",
+          user_id: $user ? $user.uid : null,
+        }),
       }).catch(console.error);
 
-      const response = await fetch("http://127.0.0.1:5000/api/properties");
+      const response = await fetch(`${API_BASE_URL}/api/properties`);
       if (response.ok) {
         const data = await response.json();
         properties = data.properties || [];
@@ -52,7 +55,7 @@
 <div class="flex flex-col min-h-screen bg-background">
   <!-- Hero Section -->
   <section
-    class="relative h-[70vh] min-h-[600px] flex items-center justify-center overflow-hidden"
+    class="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden"
   >
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
@@ -62,7 +65,7 @@
         class="w-full h-full object-cover"
       />
       <div
-        class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background/90"
+        class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-background/90"
       ></div>
     </div>
 
@@ -132,36 +135,16 @@
         </div>
       </div>
 
-      <!-- Stats -->
-      <div
-        class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-white/90"
-      >
-        <div class="text-center">
-          <div class="text-3xl font-bold mb-1">150+</div>
-          <div class="text-xs uppercase tracking-wider opacity-70">
-            Premium Listings
-          </div>
-        </div>
-        <div class="text-center">
-          <div class="text-3xl font-bold mb-1">2k+</div>
-          <div class="text-xs uppercase tracking-wider opacity-70">
-            Happy Clients
-          </div>
-        </div>
-        <div class="text-center">
-          <div class="text-3xl font-bold mb-1">50+</div>
-          <div class="text-xs uppercase tracking-wider opacity-70">Cities</div>
-        </div>
-        <div class="text-center">
-          <div class="text-3xl font-bold mb-1">24/7</div>
-          <div class="text-xs uppercase tracking-wider opacity-70">Support</div>
-        </div>
-      </div>
+      <!-- Stats Component -->
+      <StatsSection />
     </div>
   </section>
 
   <!-- Featured Collections -->
   <FeaturedCollection properties={featuredProperties} {loading} />
+
+  <!-- Why Choose Us Component -->
+  <WhyChooseUsSection />
 
   <!-- Dream Home Finder (Dark Section) -->
   <section class="relative py-32 overflow-hidden">
@@ -236,106 +219,24 @@
     </div>
   </section>
 
-  <!-- Why Choose Us -->
-  <section class="py-32 bg-muted/30">
-    <div class="container px-4">
-      <div class="text-center max-w-3xl mx-auto mb-20" use:reveal>
-        <h2 class="text-4xl font-bold mb-6">Why Choose Krishna Properties</h2>
-        <p class="text-xl text-muted-foreground">
-          Excellence in every detail of your real estate journey.
-        </p>
-      </div>
+  <!-- Testimonials Component -->
+  <TestimonialsSection />
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-        <div class="text-center group" use:reveal={{ threshold: 0.1 }}>
-          <div
-            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
-          >
-            <Home class="w-8 h-8 text-primary" />
-          </div>
-          <h3 class="text-2xl font-bold mb-4">Premium Portfolio</h3>
-          <p class="text-muted-foreground leading-relaxed">
-            Access to the most exclusive and high-end properties in the market.
-          </p>
-        </div>
-        <div
-          class="text-center group"
-          use:reveal={{ threshold: 0.1, delay: 100 }}
-        >
-          <div
-            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
-          >
-            <TrendingUp class="w-8 h-8 text-primary" />
-          </div>
-          <h3 class="text-2xl font-bold mb-4">Market Insight</h3>
-          <p class="text-muted-foreground leading-relaxed">
-            Deep data-driven analysis to ensure you make the best investment
-            decisions.
-          </p>
-        </div>
-        <div
-          class="text-center group"
-          use:reveal={{ threshold: 0.1, delay: 200 }}
-        >
-          <div
-            class="w-20 h-20 mx-auto bg-background rounded-full flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform duration-300"
-          >
-            <Users class="w-8 h-8 text-primary" />
-          </div>
-          <h3 class="text-2xl font-bold mb-4">Personalized Care</h3>
-          <p class="text-muted-foreground leading-relaxed">
-            We treat every client's search as if it were our own.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <!-- Newsletter Component -->
+  <NewsletterSection />
 
-  <!-- Testimonials -->
-  <section class="py-32 container px-4">
-    <h2 class="text-4xl font-bold text-center mb-20">Client Stories</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {#each [1, 2, 3] as i}
-        <Card class="bg-muted/30 border-none">
-          <CardContent class="p-8">
-            <Quote class="w-10 h-10 text-primary/20 mb-6" />
-            <p class="text-lg text-muted-foreground mb-8 italic">
-              "The level of service and attention to detail was outstanding.
-              They truly understood what we were looking for."
-            </p>
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-                <img
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Client${i}`}
-                  alt="Client"
-                />
-              </div>
-              <div>
-                <div class="font-bold">Sarah Johnson</div>
-                <div class="text-sm text-muted-foreground">
-                  Luxury Villa Buyer
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      {/each}
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="py-32 bg-primary text-primary-foreground text-center">
+  <!-- Final CTA -->
+  <section class="py-32 bg-background text-center">
     <div class="container px-4" use:reveal>
       <h2 class="text-4xl md:text-6xl font-bold mb-8">
         Ready to elevate your lifestyle?
       </h2>
-      <p class="text-xl text-primary-foreground/80 mb-12 max-w-2xl mx-auto">
+      <p class="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
         Let us guide you home to the luxury you deserve.
       </p>
       <Button
         size="lg"
-        variant="secondary"
-        class="h-16 px-10 text-xl rounded-full"
+        class="h-16 px-10 text-xl rounded-full shadow-xl"
         href="/contact"
       >
         Contact Us Today

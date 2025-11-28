@@ -8,6 +8,7 @@
     import { Switch } from "$lib/components/ui/switch";
     import * as Avatar from "$lib/components/ui/avatar";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import { Skeleton } from "$lib/components/ui/skeleton";
     import { toast } from "svelte-sonner";
     import {
         Loader2,
@@ -20,6 +21,8 @@
     } from "lucide-svelte";
     import { goto } from "$app/navigation";
     import { deleteUser } from "firebase/auth";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     let loading = false;
     let activeTab = "general";
@@ -56,7 +59,7 @@
 
     async function fetchProfile(uid: string) {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/users/${uid}`);
+            const res = await fetchWithAuth(`${API_BASE_URL}/api/users/${uid}`);
             if (res.ok) {
                 const data = await res.json();
                 profile = { ...profile, ...data };
@@ -70,8 +73,8 @@
         if (!$user) return;
         loading = true;
         try {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/users/${$user.uid}`,
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/users/${$user.uid}`,
                 {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -99,9 +102,11 @@
         if (!$user) return;
         loading = true;
         try {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/users/${$user.uid}`,
-                { method: "DELETE" },
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/users/${$user.uid}`,
+                {
+                    method: "DELETE",
+                },
             );
 
             if (!res.ok) {
@@ -155,13 +160,19 @@
 
         <!-- Content -->
         <div class="flex-1 max-w-2xl">
-            {#if activeTab === "general"}
-                <div
-                    class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
-                >
-                    <div class="bg-card rounded-xl border shadow-sm p-6">
-                        <h2 class="text-lg font-semibold mb-1">
-                            Profile Information
+            {#if !profile.email && loading}
+                <div class="space-y-6">
+                    <div
+                        class="bg-card rounded-xl border shadow-sm p-6 space-y-6"
+                    >
+                        <div class="space-y-2">
+                            <Skeleton class="h-6 w-40" />
+                            <Skeleton class="h-4 w-60" />
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <Skeleton class="h-20 w-20 rounded-full" />
+                            <div class="space-y-2 flex-1">
+                                <Skeleton class="h-4 w-24" />
                         </h2>
                         <p class="text-sm text-muted-foreground mb-6">
                             Update your photo and personal details.
@@ -337,6 +348,35 @@
                                     </AlertDialog.Footer>
                                 </AlertDialog.Content>
                             </AlertDialog.Root>
+                        </div>
+                    </div>
+                </div>
+            {:else if activeTab === "notifications"}
+                <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="bg-card rounded-xl border shadow-sm p-6">
+                        <h2 class="text-xl font-bold mb-4">Notification Preferences</h2>
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div class="space-y-0.5">
+                                    <label class="text-sm font-medium">Email Notifications</label>
+                                    <p class="text-xs text-muted-foreground">Receive updates via email</p>
+                                </div>
+                                <Switch checked={true} />
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="space-y-0.5">
+                                    <label class="text-sm font-medium">Push Notifications</label>
+                                    <p class="text-xs text-muted-foreground">Receive updates in browser</p>
+                                </div>
+                                <Switch checked={true} />
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="space-y-0.5">
+                                    <label class="text-sm font-medium">Marketing Emails</label>
+                                    <p class="text-xs text-muted-foreground">Receive offers and news</p>
+                                </div>
+                                <Switch checked={false} />
+                            </div>
                         </div>
                     </div>
                 </div>

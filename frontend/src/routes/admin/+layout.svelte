@@ -7,8 +7,10 @@
     LayoutDashboard,
     PlusCircle,
     List,
+    FileText,
     Settings,
     Users,
+    Calendar,
   } from "lucide-svelte";
   import { toast } from "svelte-sonner";
 
@@ -57,9 +59,23 @@
         <Button
           variant="ghost"
           class="w-full justify-start"
+          href="/admin/appointments"
+        >
+          <Calendar class="mr-2 h-4 w-4" /> Appointments
+        </Button>
+        <Button
+          variant="ghost"
+          class="w-full justify-start"
           href="/admin/properties/add"
         >
           <PlusCircle class="mr-2 h-4 w-4" /> Add Property
+        </Button>
+        <Button
+          variant="ghost"
+          class="w-full justify-start"
+          href="/admin/blogs"
+        >
+          <FileText class="mr-2 h-4 w-4" /> Blogs
         </Button>
         <Button
           variant="ghost"

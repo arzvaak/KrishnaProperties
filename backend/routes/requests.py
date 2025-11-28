@@ -2,11 +2,13 @@ from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
 from firebase_admin import firestore, auth
 from datetime import datetime
+from routes.auth import verify_token, verify_admin
 
 requests_bp = Blueprint('requests', __name__)
 db, _ = initialize_firebase()
 
 @requests_bp.route('/api/requests', methods=['POST'])
+@verify_token
 def create_request():
     try:
         data = request.json
@@ -47,6 +49,7 @@ def create_request():
         return jsonify({"error": str(e)}), 500
 
 @requests_bp.route('/api/users/<user_id>/requests', methods=['GET'])
+@verify_token
 def get_user_requests(user_id):
     try:
         docs = db.collection('property_requests')\
@@ -65,6 +68,7 @@ def get_user_requests(user_id):
         return jsonify({"error": str(e)}), 500
 
 @requests_bp.route('/api/admin/requests', methods=['GET'])
+@verify_admin
 def get_all_requests():
     try:
         docs = db.collection('property_requests')\

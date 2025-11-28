@@ -10,6 +10,9 @@
   import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-svelte";
   import { user } from "$lib/stores/auth";
   import { toast } from "svelte-sonner";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
+  import AddToCompareButton from "$lib/components/comparison/AddToCompareButton.svelte";
 
   export let property: any;
   export let adminMode = false;
@@ -29,14 +32,14 @@
     try {
       const method = isFavorite ? "DELETE" : "POST";
       const url = isFavorite
-        ? `http://127.0.0.1:5000/api/users/${$user.uid}/favorites/${property.id}`
-        : `http://127.0.0.1:5000/api/users/${$user.uid}/favorites`;
+        ? `${API_BASE_URL}/api/users/${$user.uid}/favorites/${property.id}`
+        : `${API_BASE_URL}/api/users/${$user.uid}/favorites`;
 
       const body = isFavorite
         ? undefined
         : JSON.stringify({ propertyId: property.id });
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body,
@@ -76,6 +79,8 @@
           "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
         alt={property.title}
         class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700"
+        loading="lazy"
+        decoding="async"
       />
       <div
         class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300"
@@ -95,11 +100,20 @@
           size="icon"
           class="absolute top-3 right-3 z-10 rounded-full bg-card/20 backdrop-blur-md hover:bg-card text-white hover:text-destructive transition-all duration-300"
           onclick={toggleFavorite}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart
             class="h-5 w-5 {isFavorite ? 'fill-red-500 text-red-500' : ''}"
           />
         </Button>
+
+        <div class="absolute top-3 right-14 z-10">
+          <AddToCompareButton
+            propertyId={property.id}
+            size="icon"
+            className="rounded-full bg-card/20 backdrop-blur-md hover:bg-card text-white hover:text-primary border-none"
+          />
+        </div>
 
         <div
           class="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
@@ -117,6 +131,7 @@
             size="sm"
             class="h-8 px-3 shadow-lg"
             onclick={handleDelete}
+            aria-label="Delete property"
           >
             Delete
           </Button>

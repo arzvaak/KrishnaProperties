@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from firebase_config import initialize_firebase
 from firebase_admin import firestore
 from datetime import datetime
+from routes.auth import verify_admin
 
 leads_bp = Blueprint('leads', __name__)
 db, _ = initialize_firebase()
@@ -32,6 +33,7 @@ def normalize_lead(doc, lead_type):
     return data
 
 @leads_bp.route('/api/admin/leads', methods=['GET'])
+@verify_admin
 def get_all_leads():
     try:
         # Fetch Inquiries
@@ -58,6 +60,7 @@ def get_all_leads():
         return jsonify({"error": str(e)}), 500
 
 @leads_bp.route('/api/admin/leads/export', methods=['GET'])
+@verify_admin
 def export_leads():
     try:
         import csv
@@ -106,6 +109,7 @@ def export_leads():
         return jsonify({"error": str(e)}), 500
 
 @leads_bp.route('/api/admin/leads/<lead_type>/<lead_id>', methods=['GET'])
+@verify_admin
 def get_lead_details(lead_type, lead_id):
     try:
         collection_name = 'inquiries' if lead_type == 'inquiry' else 'property_requests'
@@ -119,6 +123,7 @@ def get_lead_details(lead_type, lead_id):
         return jsonify({"error": str(e)}), 500
 
 @leads_bp.route('/api/admin/leads/<lead_type>/<lead_id>', methods=['PATCH'])
+@verify_admin
 def update_lead_status(lead_type, lead_id):
     try:
         data = request.json
@@ -140,6 +145,7 @@ def update_lead_status(lead_type, lead_id):
         return jsonify({"error": str(e)}), 500
 
 @leads_bp.route('/api/admin/leads/<lead_type>/<lead_id>/notes', methods=['POST'])
+@verify_admin
 def add_lead_note(lead_type, lead_id):
     try:
         data = request.json
@@ -164,5 +170,29 @@ def add_lead_note(lead_type, lead_id):
         })
         
         return jsonify(note), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@leads_bp.route('/api/newsletter/subscribe', methods=['POST'])
+def subscribe_newsletter():
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+            
+        # Check if already subscribed
+        existing = db.collection('newsletter_subscribers').where('email', '==', email).limit(1).stream()
+        if next(existing, None):
+            return jsonify({"message": "Already subscribed"}), 200
+            
+        db.collection('newsletter_subscribers').add({
+            'email': email,
+            'subscribed_at': firestore.SERVER_TIMESTAMP,
+            'active': True
+        })
+        
+        return jsonify({"message": "Subscribed successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500

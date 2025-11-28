@@ -24,6 +24,8 @@
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
     import { user } from "$lib/stores/auth";
+    import { API_BASE_URL } from "$lib/config";
+    import { fetchWithAuth } from "$lib/api";
 
     export let conversationId: string;
     export let recipientId: string; // 'admin' or user uid
@@ -63,7 +65,7 @@
         if (!$user) return;
         try {
             // Call backend to mark as read to reset unread count
-            await fetch("http://localhost:5000/api/chat/read", {
+            await fetchWithAuth(`${API_BASE_URL}/api/chat/read`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ conversationId, userId: $user.uid }),
@@ -103,7 +105,9 @@
             // OR we stick to the plan and use the backend endpoint.
             // The plan said backend endpoint for rate limiting.
 
-            const res = await fetch("http://localhost:5000/api/chat/send", {
+            // The plan said backend endpoint for rate limiting.
+
+            const res = await fetchWithAuth(`${API_BASE_URL}/api/chat/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

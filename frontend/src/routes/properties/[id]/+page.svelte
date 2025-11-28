@@ -23,6 +23,12 @@
     Facebook,
     Twitter,
     Mail,
+    School,
+    Hospital,
+    Bus,
+    ShoppingBag,
+    Utensils,
+    Plus,
   } from "lucide-svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Skeleton } from "$lib/components/ui/skeleton";
@@ -30,7 +36,10 @@
   import Map from "$lib/components/Map.svelte";
   import ImageGallery from "$lib/components/ImageGallery.svelte";
   import ContactAgentForm from "$lib/components/ContactAgentForm.svelte";
-  import MortgageCalculator from "$lib/components/MortgageCalculator.svelte";
+  import AddToCompareButton from "$lib/components/comparison/AddToCompareButton.svelte";
+  import PropertyComparisonSection from "$lib/components/comparison/PropertyComparisonSection.svelte";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
 
   let property: any = null;
   let similarProperties: any[] = [];
@@ -50,12 +59,12 @@
     try {
       const method = isFavorite ? "DELETE" : "POST";
       const url = isFavorite
-        ? `http://127.0.0.1:5000/api/users/${$user.uid}/favorites/${id}`
-        : `http://127.0.0.1:5000/api/users/${$user.uid}/favorites`;
+        ? `${API_BASE_URL}/api/users/${$user.uid}/favorites/${id}`
+        : `${API_BASE_URL}/api/users/${$user.uid}/favorites`;
 
       const body = isFavorite ? undefined : JSON.stringify({ propertyId: id });
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body,
@@ -102,6 +111,9 @@
       case "email":
         shareUrl = `mailto:?subject=${text}&body=${url}`;
         break;
+      case "linkedin":
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+        break;
     }
 
     if (shareUrl) {
@@ -129,22 +141,22 @@
 
   onMount(async () => {
     try {
-      fetch("http://127.0.0.1:5000/api/analytics/track", {
+      fetch(`${API_BASE_URL}/api/analytics/track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "property_view", property_id: id }),
       }).catch(console.error);
 
       const [propResponse, allPropsResponse] = await Promise.all([
-        fetch(`http://127.0.0.1:5000/api/properties/${id}`),
-        fetch(`http://127.0.0.1:5000/api/properties`),
+        fetch(`${API_BASE_URL}/api/properties/${id}`),
+        fetch(`${API_BASE_URL}/api/properties`),
       ]);
 
       user.subscribe(async (u) => {
         if (u) {
           try {
-            const res = await fetch(
-              `http://127.0.0.1:5000/api/users/${u.uid}/favorites`,
+            const res = await fetchWithAuth(
+              `${API_BASE_URL}/api/users/${u.uid}/favorites`,
             );
             if (res.ok) {
               const favs = await res.json();
@@ -162,8 +174,8 @@
       user.subscribe(async (u) => {
         if (u) {
           try {
-            await fetch(
-              `http://127.0.0.1:5000/api/users/${u.uid}/recently-viewed`,
+            await fetchWithAuth(
+              `${API_BASE_URL}/api/users/${u.uid}/recently-viewed`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -304,6 +316,7 @@
                     >
                       <Printer class="w-5 h-5" />
                     </Button>
+                    <AddToCompareButton propertyId={property.id} size="icon" />
                   </div>
                 </div>
               </div>
@@ -393,13 +406,11 @@
               propertyId={property.id}
               propertyTitle={property.title}
             />
-
-            <MortgageCalculator
-              price={parseInt(property.price.replace(/[^0-9]/g, ""))}
-            />
           </div>
         </div>
       </div>
+
+      <PropertyComparisonSection currentProperty={property} />
 
       {#if similarProperties.length > 0}
         <div class="mt-16 mb-8">
@@ -488,6 +499,14 @@
       >
         <Mail class="w-6 h-6" />
         Email
+      </Button>
+      <Button
+        variant="outline"
+        class="flex flex-col h-24 gap-2 hover:bg-blue-50 hover:border-blue-200"
+        onclick={() => shareSocial("linkedin")}
+      >
+        <span class="text-2xl font-bold text-[#0077b5]">in</span>
+        LinkedIn
       </Button>
     </div>
     <div class="flex items-center space-x-2">

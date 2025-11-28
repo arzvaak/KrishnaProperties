@@ -8,6 +8,9 @@
   } from "$lib/components/ui/card";
   import { Eye, Users, Home, MessageSquare, Activity } from "lucide-svelte";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import DashboardCharts from "$lib/components/DashboardCharts.svelte";
+  import { API_BASE_URL } from "$lib/config";
+  import { fetchWithAuth } from "$lib/api";
 
   let stats: any = null;
   let loading = true;
@@ -15,8 +18,8 @@
 
   onMount(async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:5000/api/analytics/dashboard",
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/analytics/dashboard`,
       );
       if (!response.ok) throw new Error("Failed to fetch dashboard stats");
       stats = await response.json();
@@ -53,6 +56,42 @@
         <CardHeader
           class="flex flex-row items-center justify-between space-y-0 pb-2"
         >
+          <CardTitle class="text-sm font-medium">Total Users</CardTitle>
+          <Users class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{stats.total_users}</div>
+          <p class="text-xs text-muted-foreground">Registered accounts</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
+          <CardTitle class="text-sm font-medium">Total Leads</CardTitle>
+          <MessageSquare class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{stats.total_leads}</div>
+          <p class="text-xs text-muted-foreground">Inquiries & Requests</p>
+        </CardContent>
+      </Card>
+    </div>
+
+    <!-- Charts Section -->
+    <DashboardCharts
+      trafficStats={stats.traffic_stats || []}
+      funnel={stats.funnel || {}}
+      topProperties={stats.most_viewed_properties || []}
+    />
+
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <!-- Existing Cards (Site Views, Properties) -->
+      <Card>
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
           <CardTitle class="text-sm font-medium">Total Site Views</CardTitle>
           <Eye class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
@@ -75,75 +114,44 @@
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">Total Contacts</CardTitle>
-          <MessageSquare class="h-4 w-4 text-muted-foreground" />
+      <!-- Recent Activity -->
+      <Card class="col-span-4">
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{stats.total_contacts}</div>
-          <p class="text-xs text-muted-foreground">+5 since yesterday</p>
-        </CardContent>
-      </Card>
-
-      <Card
-        class="hover:bg-muted/50 transition-colors cursor-pointer"
-        onclick={() => (window.location.href = "/admin/leads")}
-      >
-        <CardHeader
-          class="flex flex-row items-center justify-between space-y-0 pb-2"
-        >
-          <CardTitle class="text-sm font-medium">Leads & Requests</CardTitle>
-          <Users class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">Manage</div>
-          <p class="text-xs text-muted-foreground">
-            View appointments & inquiries
-          </p>
+          <div class="space-y-8">
+            {#each stats.recent_events as event}
+              <div class="flex items-center">
+                <div
+                  class="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mr-4"
+                >
+                  <Activity class="h-4 w-4 text-primary" />
+                </div>
+                <div class="space-y-1">
+                  <p class="text-sm font-medium leading-none">
+                    {#if event.type === "site_view"}
+                      New Website Visit
+                    {:else if event.type === "property_view"}
+                      Property Viewed (ID: {event.property_id})
+                    {:else if event.type === "contact"}
+                      New Contact Inquiry from {event.metadata?.name || "User"}
+                    {:else}
+                      {event.type}
+                    {/if}
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    {formatDate(event.timestamp)}
+                  </p>
+                </div>
+              </div>
+            {/each}
+            {#if stats.recent_events.length === 0}
+              <p class="text-muted-foreground text-sm">No recent activity.</p>
+            {/if}
+          </div>
         </CardContent>
       </Card>
     </div>
-
-    <!-- Recent Activity -->
-    <Card class="col-span-4">
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div class="space-y-8">
-          {#each stats.recent_events as event}
-            <div class="flex items-center">
-              <div
-                class="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mr-4"
-              >
-                <Activity class="h-4 w-4 text-primary" />
-              </div>
-              <div class="space-y-1">
-                <p class="text-sm font-medium leading-none">
-                  {#if event.type === "site_view"}
-                    New Website Visit
-                  {:else if event.type === "property_view"}
-                    Property Viewed (ID: {event.property_id})
-                  {:else if event.type === "contact"}
-                    New Contact Inquiry from {event.metadata?.name || "User"}
-                  {:else}
-                    {event.type}
-                  {/if}
-                </p>
-                <p class="text-xs text-muted-foreground">
-                  {formatDate(event.timestamp)}
-                </p>
-              </div>
-            </div>
-          {/each}
-          {#if stats.recent_events.length === 0}
-            <p class="text-muted-foreground text-sm">No recent activity.</p>
-          {/if}
-        </div>
-      </CardContent>
-    </Card>
   {/if}
 </div>
