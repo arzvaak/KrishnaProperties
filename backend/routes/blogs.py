@@ -88,6 +88,10 @@ def create_blog():
         category = data.get('category')
         published = data.get('published', False)
         featured = data.get('featured', False)
+        meta_title = data.get('meta_title', '')
+        meta_description = data.get('meta_description', '')
+        meta_keywords = data.get('meta_keywords', '')
+        tags = data.get('tags', [])
         
         if not title or not content:
             return jsonify({"error": "Title and Content are required"}), 400
@@ -108,6 +112,10 @@ def create_blog():
             'category': category,
             'published': published,
             'featured': featured,
+            'meta_title': meta_title,
+            'meta_description': meta_description,
+            'meta_keywords': meta_keywords,
+            'tags': tags,
             'views': 0,
             'created_at': firestore.SERVER_TIMESTAMP,
             'updated_at': firestore.SERVER_TIMESTAMP
@@ -129,7 +137,7 @@ def update_blog(blog_id):
             'updated_at': firestore.SERVER_TIMESTAMP
         }
         
-        fields = ['title', 'content', 'excerpt', 'image', 'category', 'published', 'featured']
+        fields = ['title', 'content', 'excerpt', 'image', 'category', 'published', 'featured', 'meta_title', 'meta_description', 'meta_keywords', 'tags']
         for field in fields:
             if field in data:
                 update_data[field] = data[field]

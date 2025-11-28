@@ -189,6 +189,20 @@ def get_recently_viewed(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@users_bp.route('/api/users/<user_id>', methods=['GET'])
+@verify_token
+def get_user_profile(user_id):
+    try:
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+        
+        user_data = user_doc.to_dict()
+        user_data['id'] = user_doc.id
+        return jsonify(user_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @users_bp.route('/api/users/<user_id>', methods=['PUT'])
 @verify_token
 def update_user_profile(user_id):
@@ -353,7 +367,7 @@ def update_user_role(user_id):
         data = request.json
         role = data.get('role')
         
-        if role not in ['user', 'admin', 'superadmin']:
+        if role not in ['user', 'admin', 'superadmin', 'editor', 'author']:
             return jsonify({"error": "Invalid role"}), 400
             
         # Update Firestore

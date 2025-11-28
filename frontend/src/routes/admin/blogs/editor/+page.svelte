@@ -18,10 +18,15 @@
     import { API_BASE_URL } from "$lib/config";
     import { fetchWithAuth } from "$lib/api";
 
+    import { marked } from "marked";
+    import DOMPurify from "dompurify";
+    import { X } from "lucide-svelte";
+
     let loading = false;
     let saving = false;
     let isEditMode = false;
     let blogId: string | null = null;
+    let showPreview = false;
 
     let formData = {
         title: "",
@@ -31,9 +36,14 @@
         category: "",
         published: false,
         featured: false,
+        meta_title: "",
+        meta_description: "",
+        meta_keywords: "",
+        tags: [] as string[],
     };
 
     let categories: any[] = [];
+    let tagInput = "";
 
     onMount(async () => {
         await fetchCategories();
@@ -73,6 +83,10 @@
                         category: blog.category || "",
                         published: blog.published || false,
                         featured: blog.featured || false,
+                        meta_title: blog.meta_title || "",
+                        meta_description: blog.meta_description || "",
+                        meta_keywords: blog.meta_keywords || "",
+                        tags: blog.tags || [],
                     };
                 } else {
                     toast.error("Blog not found");
@@ -148,9 +162,27 @@
             toast.error("Error adding category");
         }
     }
+
+    function addTag() {
+        if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+            formData.tags = [...formData.tags, tagInput.trim()];
+            tagInput = "";
+        }
+    }
+
+    function removeTag(tag: string) {
+        formData.tags = formData.tags.filter((t) => t !== tag);
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addTag();
+        }
+    }
 </script>
 
-<div class="max-w-4xl mx-auto space-y-8 pb-12">
+<div class="max-w-6xl mx-auto space-y-8 pb-12">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
             <Button variant="ghost" size="icon" href="/admin/blogs">
@@ -166,6 +198,10 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 mr-4">
+                <Label class="text-sm font-medium">Preview Mode</Label>
+                <Switch bind:checked={showPreview} />
+            </div>
             <Button onclick={handleSubmit} disabled={saving}>
                 {#if saving}
                     <Loader2 class="mr-2 h-4 w-4 animate-spin" /> Saving...
@@ -181,8 +217,9 @@
             <Loader2 class="h-8 w-8 animate-spin text-primary" />
         </div>
     {:else}
-        <div class="grid gap-8">
-            <div class="grid gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
                 <div class="space-y-2">
                     <Label for="title">Title</Label>
                     <Input
@@ -193,7 +230,53 @@
                     />
                 </div>
 
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <Label for="content">Content (Markdown Supported)</Label>
+                    {#if showPreview}
+                        <div
+                            class="min-h-[500px] w-full rounded-md border bg-background px-3 py-2 prose prose-sm dark:prose-invert max-w-none overflow-y-auto"
+                        >
+                            {@html DOMPurify.sanitize(marked(formData.content))}
+                        </div>
+                    {:else}
+                        <Textarea
+                            id="content"
+                            bind:value={formData.content}
+                            placeholder="Write your article content here... (Markdown supported)"
+                            class="min-h-[500px] font-mono"
+                        />
+                    {/if}
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Publishing -->
+                <div class="grid gap-4 p-4 border rounded-lg bg-card">
+                    <h3 class="font-semibold">Publishing</h3>
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <Label>Published</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Visible to public
+                            </p>
+                        </div>
+                        <Switch bind:checked={formData.published} />
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <Label>Featured</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Show in hero
+                            </p>
+                        </div>
+                        <Switch bind:checked={formData.featured} />
+                    </div>
+                </div>
+
+                <!-- Category & Tags -->
+                <div class="grid gap-4 p-4 border rounded-lg bg-card">
+                    <h3 class="font-semibold">Organization</h3>
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <Label>Category</Label>
@@ -216,6 +299,34 @@
                     </div>
 
                     <div class="space-y-2">
+                        <Label>Tags</Label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            {#each formData.tags as tag}
+                                <div
+                                    class="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs flex items-center gap-1"
+                                >
+                                    {tag}
+                                    <button
+                                        onclick={() => removeTag(tag)}
+                                        class="hover:text-destructive"
+                                    >
+                                        <X class="h-3 w-3" />
+                                    </button>
+                                </div>
+                            {/each}
+                        </div>
+                        <Input
+                            placeholder="Add tag and press Enter"
+                            bind:value={tagInput}
+                            onkeydown={handleKeyDown}
+                        />
+                    </div>
+                </div>
+
+                <!-- Media -->
+                <div class="grid gap-4 p-4 border rounded-lg bg-card">
+                    <h3 class="font-semibold">Media</h3>
+                    <div class="space-y-2">
                         <Label for="image">Cover Image URL</Label>
                         <div class="flex gap-2">
                             <Input
@@ -237,6 +348,36 @@
                     </div>
                 </div>
 
+                <!-- SEO -->
+                <div class="grid gap-4 p-4 border rounded-lg bg-card">
+                    <h3 class="font-semibold">SEO Settings</h3>
+                    <div class="space-y-2">
+                        <Label for="meta_title">Meta Title</Label>
+                        <Input
+                            id="meta_title"
+                            bind:value={formData.meta_title}
+                            placeholder="SEO Title"
+                        />
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="meta_description">Meta Description</Label>
+                        <Textarea
+                            id="meta_description"
+                            bind:value={formData.meta_description}
+                            placeholder="SEO Description"
+                            rows={3}
+                        />
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="meta_keywords">Meta Keywords</Label>
+                        <Input
+                            id="meta_keywords"
+                            bind:value={formData.meta_keywords}
+                            placeholder="keyword1, keyword2"
+                        />
+                    </div>
+                </div>
+
                 <div class="space-y-2">
                     <Label for="excerpt">Excerpt</Label>
                     <Textarea
@@ -244,43 +385,6 @@
                         bind:value={formData.excerpt}
                         placeholder="Short summary for listing cards..."
                         rows={3}
-                    />
-                </div>
-
-                <div
-                    class="grid md:grid-cols-2 gap-6 p-4 border rounded-lg bg-muted/20"
-                >
-                    <div class="flex items-center justify-between">
-                        <div class="space-y-0.5">
-                            <Label>Published</Label>
-                            <p class="text-sm text-muted-foreground">
-                                Visible to the public
-                            </p>
-                        </div>
-                        <Switch bind:checked={formData.published} />
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="space-y-0.5">
-                            <Label>Featured</Label>
-                            <p class="text-sm text-muted-foreground">
-                                Show in hero section
-                            </p>
-                        </div>
-                        <Switch bind:checked={formData.featured} />
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <Label for="content">Content (HTML/Markdown)</Label>
-                    <p class="text-xs text-muted-foreground mb-2">
-                        Supports basic HTML tags. Use <code>&lt;h2&gt;</code>,
-                        <code>&lt;p&gt;</code>, <code>&lt;ul&gt;</code>, etc.
-                    </p>
-                    <Textarea
-                        id="content"
-                        bind:value={formData.content}
-                        placeholder="Write your article content here..."
-                        class="min-h-[400px] font-mono"
                     />
                 </div>
             </div>

@@ -56,29 +56,6 @@
 - [x] Recent activity feed
 - [x] Most viewed properties chart
 - [x] Lead conversion funnel visualization
-- [x] Traffic analytics (daily/weekly/monthly)
-- [x] Popular search terms tracking (via Most Viewed Properties)
-
-### User Management
-- [x] View all users table with search/filter
-- [x] View all appointments calendar
-- [x] Appointment status updates (Pending/Confirmed/Completed/Cancelled)
-- [x] Appointment notifications
-- [x] Reschedule appointment functionality
-
-## Phase 5: Content & Marketing
-### Blog System
-- [x] **Blog System**
-    - [x] **Backend**: Blog & Category endpoints.
-    - [x] **Frontend Public**: Listing & Detail pages.
-    - [x] **Frontend Admin**: Editor & Management.
-    - [x] **Features**: Search, Categories, Featured posts.
-
-### Homepage
-- [x] Hero section with search bar (Carousel implemented)
-- [x] Featured properties carousel
-- [x] Recent listings grid
-- [x] Property statistics section (total listings, sold, etc.)
 - [x] Testimonials/reviews section
 - [x] Call-to-action sections
 - [x] Newsletter signup form
@@ -143,7 +120,6 @@
 - [ ] User guide
 - [ ] Admin manual
 - [ ] Deployment guide
-- [ ] Contributing guide (if open source)
 - [x] README.md
 
 ## Phase 11: System Settings
@@ -171,7 +147,6 @@
 
 ### Sprint 2 (Week 3-4)
 - [x] Advanced search filters & sorting
-- [ ] Lead management dashboard
 - [x] Email notifications
 - [x] Property analytics
 - [x] Homepage with featured listings
@@ -179,7 +154,7 @@
 ### Sprint 3 (Week 5-6)
 - [x] Real-time chat system
 - [ ] Appointment booking
-- [ ] Admin/Superadmin profiles & roles
+- [x] Admin/Superadmin profiles & roles
 - [ ] Property status management
 - [ ] User management
 
@@ -190,15 +165,12 @@
 - [x] Static pages (Contact Page Done)
 
 ### Sprint 5 (Week 9-10)
-- [ ] Review system
 - [ ] Notification center
 - [x] Map integration (Done)
-- [ ] Neighborhood pages
 - [ ] UI/UX polish
 
 ### Sprint 6 (Week 11-12)
 - [ ] Testing suite
 - [ ] Security hardening
 - [ ] Performance optimization
-- [ ] Deployment
 - [ ] Documentation (Partial)

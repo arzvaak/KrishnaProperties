@@ -39,25 +39,6 @@ Talisman(app, force_https=False, content_security_policy=None)
 
 # Rate Limiting
 limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
-
-app.register_blueprint(properties_bp)
-app.register_blueprint(users_bp)
-app.register_blueprint(analytics_bp)
-app.register_blueprint(appointments_bp)
-app.register_blueprint(requests_bp)
-app.register_blueprint(inquiries_bp)
-app.register_blueprint(chat_bp)
-app.register_blueprint(leads_bp)
-app.register_blueprint(blogs_bp)
-app.register_blueprint(cleanup_bp)
-app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
-
-# Initialize Firebase
 try:
     db, bucket = initialize_firebase()
     print("Firebase initialized successfully")

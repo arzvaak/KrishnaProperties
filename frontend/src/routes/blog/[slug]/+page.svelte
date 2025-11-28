@@ -20,6 +20,9 @@
     import { format } from "date-fns";
     import { toast } from "svelte-sonner";
     import { API_BASE_URL } from "$lib/config";
+    import { marked } from "marked";
+    import DOMPurify from "dompurify";
+    import { settings } from "$lib/stores/settings";
 
     let blog: any = null;
     let relatedBlogs: any[] = [];
@@ -77,6 +80,41 @@
         }
     }
 </script>
+
+<svelte:head>
+    {#if blog}
+        <title
+            >{blog.meta_title || blog.title} | {$settings.general
+                .siteName}</title
+        >
+        <meta
+            name="description"
+            content={blog.meta_description || blog.excerpt}
+        />
+        <meta
+            name="keywords"
+            content={blog.meta_keywords || $settings.seo.defaultKeywords}
+        />
+
+        <!-- Open Graph -->
+        <meta property="og:title" content={blog.meta_title || blog.title} />
+        <meta
+            property="og:description"
+            content={blog.meta_description || blog.excerpt}
+        />
+        <meta property="og:image" content={blog.image} />
+        <meta property="og:type" content="article" />
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={blog.meta_title || blog.title} />
+        <meta
+            name="twitter:description"
+            content={blog.meta_description || blog.excerpt}
+        />
+        <meta name="twitter:image" content={blog.image} />
+    {/if}
+</svelte:head>
 
 <div class="min-h-screen bg-background pb-12">
     {#if loading}
@@ -162,8 +200,19 @@
 
                     <!-- Content Render -->
                     <div class="blog-content">
-                        {@html blog.content}
+                        {@html DOMPurify.sanitize(marked(blog.content))}
                     </div>
+
+                    {#if blog.tags && blog.tags.length > 0}
+                        <div class="mt-8 pt-8 border-t not-prose">
+                            <h4 class="text-sm font-semibold mb-3">Tags</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {#each blog.tags as tag}
+                                    <Badge variant="outline">#{tag}</Badge>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
                 </article>
 
                 <!-- Sidebar -->

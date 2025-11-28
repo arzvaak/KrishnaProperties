@@ -13,8 +13,8 @@
     import { toast } from "svelte-sonner";
     import { Mail, Phone, MapPin } from "lucide-svelte";
     import { browser } from "$app/environment";
-    import Map from "$lib/components/Map.svelte";
     import { API_BASE_URL } from "$lib/config";
+    import { settings } from "$lib/stores/settings";
 
     let loading = false;
     let name = "";
@@ -76,8 +76,13 @@
                     </div>
                     <div>
                         <h3 class="font-semibold mb-1">Phone</h3>
-                        <p class="text-muted-foreground">+91 98765 43210</p>
-                        <p class="text-muted-foreground">+91 12345 67890</p>
+                        <p class="text-muted-foreground">
+                            <a
+                                href="tel:{$settings.contact.phone}"
+                                class="hover:text-primary"
+                                >{$settings.contact.phone}</a
+                            >
+                        </p>
                     </div>
                 </div>
 
@@ -88,10 +93,11 @@
                     <div>
                         <h3 class="font-semibold mb-1">Email</h3>
                         <p class="text-muted-foreground">
-                            hello@krishnaproperties.com
-                        </p>
-                        <p class="text-muted-foreground">
-                            support@krishnaproperties.com
+                            <a
+                                href="mailto:{$settings.contact.email}"
+                                class="hover:text-primary"
+                                >{$settings.contact.email}</a
+                            >
                         </p>
                     </div>
                 </div>
@@ -102,10 +108,8 @@
                     </div>
                     <div>
                         <h3 class="font-semibold mb-1">Office</h3>
-                        <p class="text-muted-foreground">
-                            123 Properties Tower, <br />
-                            Bandra West, Mumbai, <br />
-                            Maharashtra 400050
+                        <p class="text-muted-foreground whitespace-pre-line">
+                            {$settings.contact.address}
                         </p>
                     </div>
                 </div>
@@ -175,13 +179,23 @@
     <div class="mt-16">
         <h2 class="text-2xl font-bold mb-6">Visit Our Office</h2>
         <div class="h-[400px] rounded-xl overflow-hidden border shadow-sm">
-            {#if browser}
-                <Map
-                    lat={19.0596}
-                    lng={72.8295}
-                    zoom={15}
-                    interactive={false}
-                />
+            {#if $settings.contact.mapEmbedUrl}
+                <iframe
+                    src={$settings.contact.mapEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    style="border:0;"
+                    allowfullscreen={true}
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    title="Office Location"
+                ></iframe>
+            {:else}
+                <div
+                    class="h-full w-full flex items-center justify-center bg-muted text-muted-foreground"
+                >
+                    Map not configured
+                </div>
             {/if}
         </div>
     </div>

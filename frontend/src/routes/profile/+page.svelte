@@ -9,6 +9,7 @@
     import * as Avatar from "$lib/components/ui/avatar";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
     import { Skeleton } from "$lib/components/ui/skeleton";
+    import { Badge } from "$lib/components/ui/badge";
     import { toast } from "svelte-sonner";
     import {
         Loader2,
@@ -33,6 +34,7 @@
         bio: "",
         photoURL: "",
         emailNotifications: false,
+        role: "user",
     };
 
     const tabs = [
@@ -173,13 +175,46 @@
                             <Skeleton class="h-20 w-20 rounded-full" />
                             <div class="space-y-2 flex-1">
                                 <Skeleton class="h-4 w-24" />
-                        </h2>
-                        <p class="text-sm text-muted-foreground mb-6">
-                            Update your photo and personal details.
-                        </p>
+                                <Skeleton class="h-4 w-32" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {:else if activeTab === "general"}
+                <div
+                    class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                >
+                    <div class="bg-card rounded-xl border shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2
+                                    class="text-xl font-bold flex items-center gap-2"
+                                >
+                                    General Information
+                                    {#if profile.role && profile.role !== "user"}
+                                        <Badge
+                                            variant={profile.role ===
+                                            "superadmin"
+                                                ? "destructive"
+                                                : profile.role === "admin"
+                                                  ? "default"
+                                                  : profile.role === "editor"
+                                                    ? "info"
+                                                    : profile.role === "author"
+                                                      ? "success"
+                                                      : "secondary"}
+                                        >
+                                            {profile.role.toUpperCase()}
+                                        </Badge>
+                                    {/if}
+                                </h2>
+                                <p class="text-sm text-muted-foreground">
+                                    Update your photo and personal details.
+                                </p>
+                            </div>
+                        </div>
 
                         <div class="space-y-6">
-                            <!-- Avatar -->
                             <div class="flex items-center gap-6">
                                 <Avatar.Root
                                     class="h-20 w-20 border-2 border-muted"
@@ -211,7 +246,6 @@
                                         bind:value={profile.displayName}
                                     />
                                 </div>
-
                                 <div class="grid gap-2">
                                     <Label for="email">Email</Label>
                                     <Input
@@ -226,7 +260,6 @@
                                         Email cannot be changed.
                                     </p>
                                 </div>
-
                                 <div class="grid gap-2">
                                     <Label for="phone">Phone Number</Label>
                                     <Input
@@ -235,7 +268,6 @@
                                         placeholder="+91..."
                                     />
                                 </div>
-
                                 <div class="grid gap-2">
                                     <Label for="bio">Bio</Label>
                                     <Textarea
@@ -273,7 +305,6 @@
                         <p class="text-sm text-muted-foreground mb-6">
                             Manage how you receive updates.
                         </p>
-
                         <div class="flex items-center justify-between py-4">
                             <div class="space-y-0.5">
                                 <Label class="text-base"
@@ -304,7 +335,6 @@
                         <p class="text-sm text-muted-foreground mb-6">
                             Irreversible actions for your account.
                         </p>
-
                         <div
                             class="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5"
                         >
@@ -328,12 +358,12 @@
                                         <AlertDialog.Title
                                             >Are you absolutely sure?</AlertDialog.Title
                                         >
-                                        <AlertDialog.Description>
-                                            This action cannot be undone. This
+                                        <AlertDialog.Description
+                                            >This action cannot be undone. This
                                             will permanently delete your account
                                             and remove your data from our
-                                            servers.
-                                        </AlertDialog.Description>
+                                            servers.</AlertDialog.Description
+                                        >
                                     </AlertDialog.Header>
                                     <AlertDialog.Footer>
                                         <AlertDialog.Cancel
@@ -342,41 +372,11 @@
                                         <AlertDialog.Action
                                             class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                             onclick={handleDeleteAccount}
+                                            >Delete Account</AlertDialog.Action
                                         >
-                                            Delete Account
-                                        </AlertDialog.Action>
                                     </AlertDialog.Footer>
                                 </AlertDialog.Content>
                             </AlertDialog.Root>
-                        </div>
-                    </div>
-                </div>
-            {:else if activeTab === "notifications"}
-                <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="bg-card rounded-xl border shadow-sm p-6">
-                        <h2 class="text-xl font-bold mb-4">Notification Preferences</h2>
-                        <div class="space-y-6">
-                            <div class="flex items-center justify-between">
-                                <div class="space-y-0.5">
-                                    <label class="text-sm font-medium">Email Notifications</label>
-                                    <p class="text-xs text-muted-foreground">Receive updates via email</p>
-                                </div>
-                                <Switch checked={true} />
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="space-y-0.5">
-                                    <label class="text-sm font-medium">Push Notifications</label>
-                                    <p class="text-xs text-muted-foreground">Receive updates in browser</p>
-                                </div>
-                                <Switch checked={true} />
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="space-y-0.5">
-                                    <label class="text-sm font-medium">Marketing Emails</label>
-                                    <p class="text-xs text-muted-foreground">Receive offers and news</p>
-                                </div>
-                                <Switch checked={false} />
-                            </div>
                         </div>
                     </div>
                 </div>
