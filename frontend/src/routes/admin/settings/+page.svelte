@@ -96,4 +96,34 @@
             </Button>
         </div>
     </div>
+
+    <div class="mt-10">
+        <h2 class="text-2xl font-bold tracking-tight mb-4">Role Management</h2>
+        <p class="text-muted-foreground mb-6">
+            Manage administrators and team members.
+        </p>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription
+                    >Users with elevated privileges.</CardDescription
+                >
+            </CardHeader>
+            <CardContent>
+                <div class="space-y-4">
+                    <p class="text-sm text-muted-foreground">
+                        To assign roles, go to the <a
+                            href="/admin/users"
+                            class="text-primary hover:underline">Users</a
+                        > page, select a user, and use the "Role Management" section
+                        in their profile.
+                    </p>
+                    <Button variant="outline" href="/admin/users"
+                        >Manage Users & Roles</Button
+                    >
+                </div>
+            </CardContent>
+        </Card>
+    </div>
 </div>

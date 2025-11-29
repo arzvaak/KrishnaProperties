@@ -103,9 +103,9 @@
                     <div>
                         <h3 class="font-semibold mb-1">Office</h3>
                         <p class="text-muted-foreground">
-                            123 Properties Tower, <br />
-                            Bandra West, Mumbai, <br />
-                            Maharashtra 400050
+                            Sec 16B, <br />
+                            Greater Noida West, <br />
+                            Uttar Pradesh 201306
                         </p>
                     </div>
                 </div>
@@ -177,8 +177,8 @@
         <div class="h-[400px] rounded-xl overflow-hidden border shadow-sm">
             {#if browser}
                 <Map
-                    lat={19.0596}
-                    lng={72.8295}
+                    lat={28.5961}
+                    lng={77.4583}
                     zoom={15}
                     interactive={false}
                 />

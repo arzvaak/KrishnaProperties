@@ -34,19 +34,19 @@
 
     async function loadData() {
         try {
-            const [userRes, statsRes, activityRes] = await Promise.all([
-                fetchWithAuth(`${API_BASE_URL}/api/admin/users/${userId}`),
-                fetchWithAuth(
-                    `${API_BASE_URL}/api/admin/users/${userId}/stats`,
-                ),
-                fetchWithAuth(
-                    `${API_BASE_URL}/api/admin/users/${userId}/activity`,
-                ),
-            ]);
+            const res = await fetchWithAuth(
+                `${API_BASE_URL}/api/admin/users/${userId}/details`,
+            );
 
-            if (userRes.ok) user = await userRes.json();
-            if (statsRes.ok) stats = await statsRes.json();
-            if (activityRes.ok) activity = await activityRes.json();
+            if (res.ok) {
+                const data = await res.json();
+                user = data.profile;
+                stats = data.stats;
+                activity = data.activity;
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Failed to load user data");
+            }
         } catch (e) {
             console.error("Failed to load user data", e);
             toast.error("Failed to load user data");
@@ -210,6 +210,8 @@
                                 disabled={processing}
                             >
                                 <option value="user">User</option>
+                                <option value="author">Author</option>
+                                <option value="editor">Editor</option>
                                 <option value="admin">Admin</option>
                                 <option value="superadmin">Superadmin</option>
                             </select>

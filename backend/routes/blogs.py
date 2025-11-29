@@ -18,7 +18,7 @@ def get_blogs():
         category = request.args.get('category')
         limit = int(request.args.get('limit', 10))
         
-        query = db.collection('blogs').where('published', '==', True).order_by('created_at', direction=firestore.Query.DESCENDING)
+        query = db.collection('blogs').where('published', '==', True)
         
         if category:
             query = query.where('category', '==', category)
@@ -30,6 +30,9 @@ def get_blogs():
             data = doc.to_dict()
             data['id'] = doc.id
             blogs.append(data)
+            
+        # Sort in memory to avoid composite index requirement
+        blogs.sort(key=lambda x: x.get('created_at', ''), reverse=True)
             
         return jsonify(blogs), 200
     except Exception as e:

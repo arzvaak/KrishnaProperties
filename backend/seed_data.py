@@ -1,22 +1,10 @@
-import requests
 import json
 import random
+from datetime import datetime
 
-BASE_URL = "http://127.0.0.1:5000/api/properties"
-
-# Real-world locations in Mumbai
-locations = [
-    {"name": "Bandra West", "lat": 19.0596, "lng": 72.8295},
-    {"name": "Andheri East", "lat": 19.1136, "lng": 72.8697},
-    {"name": "Worli", "lat": 19.0178, "lng": 72.8185},
-    {"name": "Powai", "lat": 19.1176, "lng": 72.9060},
-    {"name": "BKC", "lat": 19.0674, "lng": 72.8680},
-    {"name": "Juhu", "lat": 19.1075, "lng": 72.8263},
-    {"name": "Colaba", "lat": 18.9067, "lng": 72.8147},
-    {"name": "Malad West", "lat": 19.1828, "lng": 72.8402},
-    {"name": "Thane West", "lat": 19.2183, "lng": 72.9781},
-    {"name": "Navi Mumbai", "lat": 19.0330, "lng": 73.0297}
-]
+# Specific Address requested by user
+SPECIFIC_ADDRESS = "Sec 16B, Greater Noida West"
+SPECIFIC_COORDS = {"lat": 28.5961, "lng": 77.4583} # Approx coords for Greater Noida West
 
 # High-quality real estate images from Unsplash
 image_sets = [
@@ -64,15 +52,15 @@ image_sets = [
 
 titles = [
     "Luxury Villa with Private Pool",
-    "Modern Sea View Apartment",
+    "Modern Apartment with Park View",
     "Spacious Penthouse Suite",
-    "Cozy Studio near Metro",
-    "Premium Office Space",
+    "Cozy Studio near Market",
+    "Premium Commercial Space",
     "Elegant Family Home",
     "Contemporary Urban Loft",
-    "Beachfront Holiday Home",
+    "Corner Plot for Sale",
     "Garden Facing Residence",
-    "High-Rise Luxury Condo"
+    "Industrial Plot in Prime Location"
 ]
 
 descriptions = [
@@ -83,46 +71,120 @@ descriptions = [
     "Step into a world of elegance. This home features high ceilings, large windows, and a beautiful private garden."
 ]
 
-properties = []
+property_types = [
+    "Authority plots", 
+    "Free Hold plots", 
+    "Commercial Plots", 
+    "Industrial or Factory Plots", 
+    "Villa's"
+]
 
-for i in range(12):
-    loc = locations[i % len(locations)]
-    imgs = image_sets[i % len(image_sets)]
-    title = titles[i % len(titles)]
-    desc = descriptions[i % len(descriptions)]
+def seed_properties(db):
+    print("Seeding properties...")
+    properties = []
     
-    price_val = random.randint(50, 2000) * 100000
-    price_formatted = f"{price_val:,}"
-    
-    prop = {
-        "title": f"{title} in {loc['name']}",
-        "location": f"{loc['name']}, Mumbai",
-        "price": price_formatted,
-        "bedrooms": random.randint(1, 5),
-        "bathrooms": random.randint(1, 6),
-        "area": random.randint(500, 5000),
-        "type": random.choice([
-            "Authority plots", 
-            "Free Hold plots", 
-            "Commercial Plots", 
-            "Industrial or Factory Plots", 
-            "Villa's"
-        ]),
-        "description": desc,
-        "imageUrl": imgs[0],
-        "images": imgs,
-        "coordinates": {"lat": loc["lat"], "lng": loc["lng"]}
-    }
-    properties.append(prop)
+    for i in range(15):
+        imgs = image_sets[i % len(image_sets)]
+        title = titles[i % len(titles)]
+        desc = descriptions[i % len(descriptions)]
+        prop_type = property_types[i % len(property_types)]
+        
+        price_val = random.randint(50, 2000) * 100000
+        price_formatted = f"{price_val:,}"
+        
+        prop = {
+            "title": f"{title}",
+            "location": SPECIFIC_ADDRESS,
+            "price": price_formatted,
+            "bedrooms": random.randint(1, 5),
+            "bathrooms": random.randint(1, 6),
+            "area": random.randint(500, 5000),
+            "type": prop_type,
+            "description": desc,
+            "imageUrl": imgs[0],
+            "images": imgs,
+            "coordinates": SPECIFIC_COORDS,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "status": "available"
+        }
+        properties.append(prop)
 
-print(f"Seeding {len(properties)} properties...")
+    for prop in properties:
+        try:
+            db.collection('properties').add(prop)
+            print(f"Created Property: {prop['title']}")
+        except Exception as e:
+            print(f"Error creating property {prop['title']}: {e}")
 
-for prop in properties:
+def seed_blogs(db):
+    print("\nSeeding blogs...")
+    # Import slugify
     try:
-        response = requests.post(BASE_URL, json=prop)
-        if response.status_code == 201:
-            print(f"Created: {prop['title']}")
-        else:
-            print(f"Failed to create {prop['title']}: {response.text}")
-    except Exception as e:
-        print(f"Error creating {prop['title']}: {e}")
+        from slugify import slugify
+    except ImportError:
+        # Fallback if python-slugify not installed in this env, though it should be
+        def slugify(text):
+            return text.lower().replace(' ', '-')
+
+    blog_titles = [
+        "Top 5 Investment Tips for Greater Noida West",
+        "Why Sec 16B is the Next Big Thing",
+        "Interior Design Trends for 2025",
+        "Understanding Property Taxes in India",
+        "The Benefits of Living in a Gated Community"
+    ]
+    
+    blog_contents = [
+        "Investing in real estate is a journey. Here are the top 5 tips to make sure you get the best ROI...",
+        "Sec 16B in Greater Noida West is witnessing rapid infrastructure development...",
+        "Minimalism is out, maximalism is in! Discover the vibrant trends taking over homes this year...",
+        "Navigating the complex world of property taxes can be daunting. We break it down for you...",
+        "Safety, community, and amenities. Explore why gated communities are the preferred choice for families..."
+    ]
+    
+    blog_images = [
+        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+        "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+    ]
+
+    for i in range(5):
+        title = blog_titles[i]
+        slug = slugify(title)
+        
+        blog = {
+            "title": title,
+            "slug": slug,
+            "excerpt": blog_contents[i][:100] + "...",
+            "content": blog_contents[i] * 5, # Make it longer
+            "image": blog_images[i], # Changed from imageUrl to image
+            "author": "Krishna Properties Team",
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "created_at": firestore.SERVER_TIMESTAMP, # Add snake_case for consistency with backend
+            "tags": ["Real Estate", "Tips", "Greater Noida"],
+            "published": True, # CRITICAL: Must be true to show up
+            "views": random.randint(10, 500)
+        }
+        
+        try:
+            # Check if exists to avoid duplicates (optional but good)
+            existing = db.collection('blogs').where('slug', '==', slug).limit(1).stream()
+            if not next(existing, None):
+                db.collection('blogs').add(blog)
+                print(f"Created Blog: {blog['title']}")
+            else:
+                print(f"Skipped (Exists): {blog['title']}")
+        except Exception as e:
+            print(f"Error creating blog {blog['title']}: {e}")
+
+from firebase_config import initialize_firebase
+from firebase_admin import firestore
+
+if __name__ == "__main__":
+    # Initialize Firebase
+    db, _ = initialize_firebase()
+    
+    seed_properties(db)
+    seed_blogs(db)

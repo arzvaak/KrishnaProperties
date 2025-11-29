@@ -9,7 +9,8 @@ export const isAdmin = writable(false);
 onAuthStateChanged(auth, async (currentUser) => {
     user.set(currentUser);
     if (currentUser) {
-        const tokenResult = await currentUser.getIdTokenResult();
+        // Force token refresh to get the latest claims (e.g. admin role)
+        const tokenResult = await currentUser.getIdTokenResult(true);
         isAdmin.set(!!tokenResult.claims.admin);
     } else {
         isAdmin.set(false);

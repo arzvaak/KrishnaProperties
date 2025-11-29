@@ -1,0 +1,23 @@
+{
+    "hosting": {
+        "public": "frontend/build",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "/api/**",
+                "run": {
+                    "serviceId": "krishna-backend",
+                    "region": "asia-south1"
+                }
+            },
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    }
+}

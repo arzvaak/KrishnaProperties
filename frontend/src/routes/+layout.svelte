@@ -6,7 +6,17 @@
   import ComparisonFloatingBar from "$lib/components/comparison/ComparisonFloatingBar.svelte";
   import { page } from "$app/stores";
 
+  import { onMount } from "svelte";
+
   let { children } = $props();
+
+  onMount(() => {
+    const loader = document.getElementById("app-loader");
+    if (loader) {
+      loader.style.opacity = "0";
+      setTimeout(() => loader.remove(), 500);
+    }
+  });
 </script>
 
 <div

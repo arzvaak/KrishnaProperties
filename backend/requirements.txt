@@ -7,3 +7,5 @@ Flask-Limiter
 bleach
 Flask-Talisman
 sentry-sdk[flask]
+gunicorn
+python-slugify

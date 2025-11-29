@@ -33,7 +33,7 @@ from routes.notifications import notifications_bp
 
 app = Flask(__name__)
 # Restrict CORS to frontend origin
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "https://krishna-properties-f396d.web.app"]}})
 
 # Security Headers
 csp = {
@@ -44,7 +44,7 @@ csp = {
     'style-src': '\'self\' \'unsafe-inline\''
 }
 # Force HTTPS in production (when debug is False)
-force_https = os.getenv('FLASK_DEBUG', 'False') == 'False'
+force_https = os.getenv('FORCE_HTTPS', 'False') == 'True'
 Talisman(app, force_https=force_https, content_security_policy=csp)
 
 from extensions import limiter

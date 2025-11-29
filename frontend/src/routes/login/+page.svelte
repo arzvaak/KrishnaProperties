@@ -6,6 +6,7 @@
     CardDescription,
     CardHeader,
     CardTitle,
+    CardFooter,
   } from "$lib/components/ui/card";
   import { auth } from "$lib/firebase";
   import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
@@ -27,7 +28,20 @@
       toast.success("Logged in with Google!");
       goto("/");
     } catch (error: any) {
-      toast.error(error.message);
+      console.error("Login error:", error);
+      if (error.code === "auth/popup-closed-by-user") {
+        toast.info("Login cancelled");
+        return;
+      }
+      if (
+        error.message &&
+        (error.message.includes("Account not found") || error.status === 404)
+      ) {
+        toast.error("Account not found. Please sign up first.");
+        goto("/signup");
+      } else {
+        toast.error(error.message || "Failed to login");
+      }
     }
   }
 </script>
@@ -65,5 +79,13 @@
         Continue with Google
       </Button>
     </CardContent>
+    <CardFooter class="justify-center">
+      <div class="text-sm text-muted-foreground">
+        Don't have an account? <a
+          href="/signup"
+          class="text-primary hover:underline">Sign up</a
+        >
+      </div>
+    </CardFooter>
   </Card>
 </div>

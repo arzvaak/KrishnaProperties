@@ -10,9 +10,15 @@
     export let size: "default" | "sm" | "lg" | "icon" = "default";
     export let className: string = "";
 
+    export let showText = true;
+
     $: isSelected = $comparison.includes(propertyId);
 
-    function toggle() {
+    function toggle(e?: MouseEvent) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         comparison.toggleProperty(propertyId);
     }
 </script>
@@ -30,10 +36,14 @@
     aria-label={isSelected ? "Remove from comparison" : "Add to comparison"}
 >
     {#if isSelected}
-        <Check class="h-4 w-4 mr-2" />
-        <span class="hidden sm:inline">Added</span>
+        <Check class={cn("h-4 w-4", showText && "mr-2")} />
+        {#if showText}
+            <span class="hidden sm:inline">Added</span>
+        {/if}
     {:else}
-        <ArrowLeftRight class="h-4 w-4 mr-2" />
-        <span class="hidden sm:inline">Compare</span>
+        <ArrowLeftRight class={cn("h-4 w-4", showText && "mr-2")} />
+        {#if showText}
+            <span class="hidden sm:inline">Compare</span>
+        {/if}
     {/if}
 </Button>

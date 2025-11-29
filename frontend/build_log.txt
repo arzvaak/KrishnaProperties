@@ -1,0 +1,20 @@
+
+> frontend@0.0.1 build
+> vite build
+
+[36mvite v7.2.4 [32mbuilding ssr environment for production...[36m[39m
+transforming...
+"isSameDay" is imported from external module "date-fns" but never used in "src/routes/admin/appointments/+page.svelte".
+"today" is imported from external module "@internationalized/date" but never used in "src/routes/admin/appointments/+page.svelte".
+"addDoc", "serverTimestamp", "updateDoc" and "increment" are imported from external module "firebase/firestore" but never used in "src/lib/components/Chat/ChatWindow.svelte".
+"sequence" is imported from external module "@sveltejs/kit/hooks" but never used in "src/hooks.server.ts".
+"default" is imported from external module "embla-carousel-autoplay" but never used in "src/lib/components/ImageGallery.svelte".
+[32mΓ£ô[39m 4448 modules transformed.
+Γ£ù Build failed in 10.50s
+error during build:
+"firebase/app" cannot be included in manualChunks because it is resolved as an external module by the "external" option or plugins.
+    at getRollupError (file:///I:/KrishnaRealEstate/frontend/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at error (file:///I:/KrishnaRealEstate/frontend/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+    at ModuleLoader.loadEntryModule (file:///I:/KrishnaRealEstate/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21617:20)
+    at async Promise.all (index 0)
+    at async Promise.all (index 0)

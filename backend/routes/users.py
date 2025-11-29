@@ -25,23 +25,56 @@ def sync_user():
         
         now = str(datetime.now())
         
+        # Get additional data from request body
+        req_data = request.get_json() or {}
+        phone_number = req_data.get('phoneNumber')
+
         if not user_doc.exists:
+            # Enforce Signup: Phone number is required for new users
+            if not phone_number:
+                return jsonify({"error": "Account not found. Please sign up."}), 404
+
+            # Validate Indian Phone Number
+            # Format: +91 followed by 10 digits
+            import re
+            if not re.match(r'^\+91\d{10}$', phone_number):
+                return jsonify({"error": "Invalid phone number. Must be in format +91XXXXXXXXXX"}), 400
+
             # Create new user
-            user_ref.set({
+            user_data_to_save = {
                 'email': email,
                 'displayName': user_data.get('name', ''),
                 'photoURL': user_data.get('picture', ''),
                 'role': 'user',
                 'createdAt': now,
                 'lastLogin': now,
-                'status': 'active'
-            })
-        else:
-            # Update last login
-            user_ref.update({
-                'lastLogin': now
-            })
+                'status': 'active',
+                'phoneNumber': phone_number
+            }
             
+            user_ref.set(user_data_to_save)
+        else:
+            # Update last login and phone if provided (and valid)
+            update_data = {'lastLogin': now}
+            if phone_number:
+                # Optional: Validate phone on update too if we want strictness everywhere
+                import re
+                if not re.match(r'^\+91\d{10}$', phone_number):
+                     return jsonify({"error": "Invalid phone number. Must be in format +91XXXXXXXXXX"}), 400
+                update_data['phoneNumber'] = phone_number
+            
+            user_ref.update(update_data)
+            
+            # Sync Custom Claims
+            # If the user has a role in Firestore, ensure it's in their custom claims
+            current_role = user_doc.to_dict().get('role')
+            if current_role in ['admin', 'superadmin', 'editor', 'author']:
+                try:
+                    auth.set_custom_user_claims(uid, {'role': current_role})
+                    print(f"Synced custom claims for user {uid} to role {current_role}")
+                except Exception as e:
+                    print(f"Error setting custom claims: {e}")
+
         return jsonify({"message": "User synced successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

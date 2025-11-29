@@ -16,7 +16,6 @@ export default defineConfig({
 		rollupOptions: {
 			output: {
 				manualChunks: {
-					firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
 					ui: ['lucide-svelte', 'svelte-sonner']
 				}
 			}

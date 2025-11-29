@@ -145,6 +145,11 @@
         >About</a
       >
       <a
+        href="/blog"
+        class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
+        >Blogs</a
+      >
+      <a
         href="/contact"
         class="text-sm font-medium text-white/80 hover:text-amber-400 transition-colors"
         >Contact</a
@@ -210,7 +215,7 @@
           >
           <Button
             size="sm"
-            href="/register"
+            href="/signup"
             class="bg-amber-500 hover:bg-amber-600 text-black font-semibold border-none"
             >Sign Up</Button
           >
@@ -254,6 +259,11 @@
         onclick={toggleMobileMenu}>About</a
       >
       <a
+        href="/blog"
+        class="text-white/80 hover:text-amber-400"
+        onclick={toggleMobileMenu}>Blogs</a
+      >
+      <a
         href="/contact"
         class="text-white/80 hover:text-amber-400"
         onclick={toggleMobileMenu}>Contact</a
@@ -279,7 +289,7 @@
           onclick={toggleMobileMenu}>Login</a
         >
         <a
-          href="/register"
+          href="/signup"
           class="text-amber-400 font-medium"
           onclick={toggleMobileMenu}>Sign Up</a
         >

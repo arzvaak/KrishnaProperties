@@ -81,37 +81,27 @@
             Meet Our Leadership
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
-            {#each [1, 2, 3] as i}
-                <div use:reveal={{ delay: i * 100 }}>
-                    <Card class="overflow-hidden group">
-                        <div class="h-64 overflow-hidden">
-                            <img
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Team${i}`}
-                                alt="Team Member"
-                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                        </div>
-                        <CardContent class="p-6 text-center">
-                            <h3 class="font-bold text-xl mb-1">
-                                {["Rajesh Kumar", "Priya Sharma", "Amit Patel"][
-                                    i - 1
-                                ]}
-                            </h3>
-                            <p class="text-primary font-medium mb-4">
-                                {[
-                                    "Founder & CEO",
-                                    "Head of Sales",
-                                    "Senior Consultant",
-                                ][i - 1]}
-                            </p>
-                            <p class="text-sm text-muted-foreground">
-                                Dedicated to delivering excellence and ensuring
-                                client satisfaction at every step.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            {/each}
+            <div class="mx-auto max-w-sm" use:reveal={{ delay: 100 }}>
+                <Card class="overflow-hidden group">
+                    <div class="h-64 overflow-hidden bg-muted">
+                        <img
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Atul`}
+                            alt="Atul"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                    </div>
+                    <CardContent class="p-6 text-center">
+                        <h3 class="font-bold text-xl mb-1">Atul</h3>
+                        <p class="text-primary font-medium mb-4">
+                            Founder & CEO
+                        </p>
+                        <p class="text-sm text-muted-foreground">
+                            Leading with vision and integrity to help you find
+                            your dream sanctuary.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </div>
 </div>
