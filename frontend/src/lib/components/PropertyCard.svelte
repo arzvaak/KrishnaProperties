@@ -107,6 +107,14 @@
           />
         </Button>
 
+        <div class="absolute top-3 right-14 z-10">
+          <AddToCompareButton
+            propertyId={property.id}
+            size="icon"
+            className="rounded-full bg-card/20 backdrop-blur-md hover:bg-card text-white hover:text-primary border-none"
+          />
+        </div>
+
         <div
           class="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
         >

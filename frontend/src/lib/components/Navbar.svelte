@@ -10,6 +10,9 @@
   import { db } from "$lib/firebase";
   import { doc, onSnapshot } from "firebase/firestore";
   import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { slide } from "svelte/transition";
+  import NotificationCenter from "$lib/components/NotificationCenter.svelte";
 
   import { slide } from "svelte/transition";
   import NotificationCenter from "$lib/components/NotificationCenter.svelte";

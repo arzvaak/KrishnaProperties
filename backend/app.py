@@ -52,6 +52,17 @@ from extensions import limiter
 # Rate Limiting
 limiter.init_app(app)
 
+# Security Headers
+Talisman(app, force_https=False, content_security_policy=None)
+
+# Rate Limiting
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
 app.register_blueprint(properties_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(analytics_bp)
